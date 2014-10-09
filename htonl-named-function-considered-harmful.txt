@@ -87,12 +87,12 @@ This then would give rise to a mandate that `<experimental/net>` be included
 _before_ all inclusions of `sys/network.h`, or some similar rule.  But usage of
 `std::experimental::net::htonl` would cause a syntax error, upon macro expansion
 of the token `htonl`.  This problem is significantly compounded by the hazards
-of transitive include, and large bodies of existing code.  Note that the Berkely
-Sockets API is the de-facto networking standard for all C-based languages.  At
-best, the `<experimental/net>` implementations of `htonl` and friends become
-unusuable... at worst, there are myriad, subtle parse and syntax errors which
-will arise under different inclusion order (sometimes sparked by changes to
-headers outside of the author's control.)
+of transitive include, and large bodies of existing code.  Note that the
+Berkeley Sockets API is the de facto networking standard for all C-based
+languages.  At best, the `<experimental/net>` implementations of `htonl` and
+friends become unusable... at worst, there are myriad, subtle parse and syntax
+errors which will arise under different inclusion order (sometimes sparked by
+changes to headers outside of the author's control.)
 
 This TS places a severe burden upon OS vendors (and authors) to change their
 existing practices (often mostly written in C), to accommodate this new C++
