@@ -42,7 +42,9 @@ production, from the proposed 'htonl' and friends named functions.
 --- Example impl for `experimental/net` ---
     // ...
 
-    namespace std { namespace experimental { inline namespace fundamentals_v1 {
+    namespace std {
+    namespace experimental {
+    inline namespace fundamentals_v1 {
     namespace net {
         // ...
         constexpr uint32_t htonl(uint32_t host) noexcept;
@@ -67,8 +69,7 @@ production, from the proposed 'htonl' and friends named functions.
     int
     main()
     {
-        std::experimental::net::htonl(42);
-        // Syntax error, if `htonl` is a macro.
+        std::experimental::net::htonl(42); // Syntax error, if `htonl` is a macro.
         using std::experimental::net::htonl; // Syntax error, if `htonl` is a macro.
         using namespace std::experimental::net; // Okay.
 
