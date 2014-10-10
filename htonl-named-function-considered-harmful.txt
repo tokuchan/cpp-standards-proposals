@@ -11,6 +11,7 @@ ISO/IEC JTC1 SC22 WG21 N???? - 2014.10.09
     Justin R. Hibbits         (jhibbits@FreeBSD.org)
     ADAM David Alan Martin   (adamartin@FreeBSD.org)
                             (amartin172@bloomberg.net)
+    Alisdair Meredith       (ameredith1@bloomberg.net)
     George Neville-Neil            (gnn@FreeBSD.org)
     Glenn Strauss             (gstrauss@gluelogic.com)
                              (gstrauss1@bloomberg.net)
