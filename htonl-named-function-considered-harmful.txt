@@ -41,14 +41,14 @@ The Issue
 The following code examples illustrate the problems which may occur, in
 production, due to the proposed 'htonl' and friends named functions.
 
---- System Header, such as `sys/network.h` ---
+    --- System Header, such as `sys/network.h` ---
     // ...
     #define htonl( x ) /* Implementation specific way to convert ... */
     // ...
 
---- End of System Header, such as `network.h` ---
+    --- End of System Header, such as `network.h` ---
 
---- Example impl for `experimental/net` ---
+    --- Example impl for `experimental/net` ---
     // ...
 
     namespace std {
@@ -62,18 +62,18 @@ production, due to the proposed 'htonl' and friends named functions.
     } // fundamentals_v1
     } // experimental
     } // std
---- End of TS impl for `experimental/net` ---
+    --- End of TS impl for `experimental/net` ---
 
 
---- My program `main.cpp` ---
+    --- My program `main.cpp` ---
     #include <sys/network.h>
     #include <experimental/net>   // XXX: Parse error may occur in here
 
     //...
---- End of My program `main.cpp` ---
+    --- End of My program `main.cpp` ---
 
 
---- My other program `main2.cpp` ---
+    --- My other program `main2.cpp` ---
     #include <experimental/net>
     #include <sys/network.h>
 
@@ -90,7 +90,7 @@ production, due to the proposed 'htonl' and friends named functions.
         // but invoke the macro, not the C++-TS implementation.
         htonl( 42 );
     }
---- End of My other program `main2.cpp` ---
+    --- End of My other program `main2.cpp` ---
 
 This then would give rise to a mandate that `<experimental/net>` be included
 _before_ all inclusions of `sys/network.h`, or some similar rule, but usage of
