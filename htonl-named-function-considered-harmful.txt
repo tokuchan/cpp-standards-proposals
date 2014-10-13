@@ -3,14 +3,14 @@ Networking Primitives: `std::experimental::network::htonl` Considered Harmful
 
 ISO/IEC JTC1 SC22 WG21 N4249 - 2014.10.09
 
+    ADAM David Alan Martin   (adamartin@FreeBSD.org)
+                            (amartin172@bloomberg.net)
     James Craig Burley           (james@burleyarch.com)
     David Chisnall            (theraven@FreeBSD.org)
     Justin Erenkrantz      (jerenkrantz@apache.org)
                                 (justin@erenkrantz.com
                            (jerenkrantz@bloomberg.net)
     Justin R. Hibbits         (jhibbits@FreeBSD.org)
-    ADAM David Alan Martin   (adamartin@FreeBSD.org)
-                            (amartin172@bloomberg.net)
     Alisdair Meredith       (ameredith1@bloomberg.net)
     George Neville-Neil            (gnn@FreeBSD.org)
     Alfred Perlstein            (alfred@FreeBSD.org)
