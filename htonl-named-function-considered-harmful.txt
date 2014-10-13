@@ -3,8 +3,8 @@ Networking Primitives: `std::experimental::network::htonl` Considered Harmful
 
 ISO/IEC JTC1 SC22 WG21 N4249 - 2014.10.09
 
-    David Chisnall            (theraven@FreeBSD.org)
     James Craig Burley           (james@burleyarch.com)
+    David Chisnall            (theraven@FreeBSD.org)
     Justin Erenkrantz      (jerenkrantz@apache.org)
                                 (justin@erenkrantz.com
                            (jerenkrantz@bloomberg.net)
