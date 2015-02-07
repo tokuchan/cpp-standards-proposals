@@ -1,11 +1,11 @@
 Constant View: A proposal for a `std::as_const` helper function template
 ========================================================================
 
-ISO/IEC JTC1 SC22 WG21 N???? - 2015.2.02
+ISO/IEC JTC1 SC22 WG21 N???? - 2015-02-06
 
-    ADAM David Alan Martin   (adamartin@FreeBSD.org)
-                            (amartin172@bloomberg.net)
-    Alisdair Meredith       (ameredith1@bloomberg.net)
+    ADAM David Alan Martin (adamartin@FreeBSD.org)
+                           (amartin172@bloomberg.net)
+    Alisdair Meredith      (ameredith1@bloomberg.net)
 
 ### Table of Contents
 
@@ -15,6 +15,7 @@ ISO/IEC JTC1 SC22 WG21 N???? - 2015.2.02
 4. Alternatives
 5. Discussion
 6. Proposed Implementation
+7. Further Discussion
 
 Introduction
 ------------
@@ -64,7 +65,7 @@ container member-function manifest.
 Motivation
 ----------
 
-A larger project often has need of calling functions, like `processEmployees`,
+A larger project often needs to call functions, like `processEmployees`,
 and selecting among specific const or non-const overloads.  Further, within
 C++11 and newer contexts, passing an object for binding or perfect forwarding
 can often require specifying a const qualifier applies to the actual object.
@@ -124,7 +125,7 @@ The drawbacks of this form are:
 * It is an even more burdensome amount of typing
 * It is phrased in an incredibly ugly and hard-to-understand form
 * It is phrased using a form which requires an extra `typename` usage, when used
-  in a template context, due to the `add_const` metafunction.
+  in a template context, due to the `add_const` metafunction
 * It is phrased in a known-dangerous cast form (`const_cast`)
 
 
@@ -186,7 +187,7 @@ The drawbacks of this form are:
   * `std::const_view( object )`
 
 In proposing `std::as_const( object )`, we feel that the name is sufficiently
-terse yet descriptive.  Every other name had at least one drawback
+terse yet descriptive.  Every other name had at least one drawback.
 
 Proposed Implementation
 -----------------------
@@ -198,31 +199,24 @@ In the `<utility>` header, the following code should work:
     namespace std
     {
         template< typename T >
-        inline const T &
-        as_const( const T &t ) noexcept
-        {
-            return t;
-        }
-
-        template< typename T >
-        inline const T &
+        inline typename std::add_const< T >::type &
         as_const( T &t ) noexcept
         {
             return t;
         }
 
-        template< typename T >
-        inline const T
-        as_const( T &&t ) noexcept( noexcept( T( t ) ) )
-        {
-            return t;
-        }
     }
     // ...
 
 
+Further Discussion
+------------------
 
-XXXX: Food for thought....
+The above implementation only supports safely re-casting an l-value as const
+(even if it may have already been const).  It is probably desirable to have
+xvalues and prvalues also be usable with `as_const`, but there are some issues
+to consider.  Some examples of contexts we'd like to consider for an expanded
+proposal are:
 
 
     std::string getString();
@@ -234,3 +228,27 @@ XXXX: Food for thought....
     void function( const std::string & );
 
     function( as_const( getString() ) );
+
+
+An alternative implementation which would support all of the forms used above,
+would be:
+
+    template< typename T >
+    inline const T &
+    as_const( const T &t ) noexcept
+    {
+        return t;
+    }
+
+    template< typename T >
+    inline const T
+    as_const( T &&t ) noexcept( noexcept( T( t ) ) )
+    {
+        return t;
+    }
+
+We believe that such an implementation helps to deal with lifetime extension
+issues for temporaries which are captured by `as_const`, but we have not fully
+examined all of the implications of these forms.  We are open to expanding
+the scope of this proposal, but we feel that the utility of a simple-to-use
+`as_const` is sufficient even without the expanded semantics.
