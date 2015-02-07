@@ -80,6 +80,8 @@ Alternatives
    equivalent to the above
 4. Provide a modified cast form, i.e.: `(const) object` which is equivalent to
    the above
+5. Provide a new trailing cast-like form, i.e.:  `object const`, or `object const.blah`
+   or `object.blah const`
 5. Provide a library function, `as_const`, which this paper proposes
 
 Discussion
@@ -197,30 +199,38 @@ In the `<utility>` header, the following code should work:
     {
         template< typename T >
         inline const T &
-        as_const( T &t ) noexcept
-        {
-            return t;
-        }
-
-        template< typename T >
-        inline const T &
         as_const( const T &t ) noexcept
         {
             return t;
         }
 
         template< typename T >
-        inline const T &&
-        as_const( T &&t ) noexcept
+        inline const T &
+        as_const( T &t ) noexcept
         {
             return t;
         }
 
         template< typename T >
-        inline const T &&
-        as_const( const T &t& ) noexcept
+        inline const T
+        as_const( T &&t ) noexcept( noexcept( T( t ) ) )
         {
             return t;
         }
     }
     // ...
+
+
+
+XXXX: Food for thought....
+
+
+    std::string getString();
+    auto &x= as_const( getString() );
+    auto &x= const_cast< const std::string & >( getString() );
+
+
+    void function( std::string & );
+    void function( const std::string & );
+
+    function( as_const( getString() ) );
