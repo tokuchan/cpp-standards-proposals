@@ -6,8 +6,6 @@ ISO/IEC JTC1 SC22 WG21 PXXX
     ADAM David Alan Martin  (adam@recursive.engineer)
     Nathan Myers            (ncm@cantrip.org)
 
-// Check If Bjarne wants to join us (based upon dinner)
-
 Abstract
 --------
 
@@ -23,83 +21,63 @@ Simple Example
 --------------
 
     ~~~
-    // Assume a concept: "ConstIndexable"
+    // Assume a concept `Concept` which expects a member `f` taking one integer
 
-
-    template< typename Key, typename Value >
-    class ConstOnlyMap
+    struct T1
     {
-        private:
-            // ...
-
-        public:
-            const Value &operator [] ( const Key &k ) const;
+        void f( int );
     };
 
-    template< typename Key, typename Value >
-    class MutableOnlyMap
+    struct T2
     {
-        private:
-            // ...
-
-        public:
-            Value &operator [] ( const Key &k );
+        void f( double );
     };
 
-    template< typename Key, typename Value >
-    class WideMap
+    struct T3
     {
-        private:
-            // ...
-
-        public:
-            const Value &operator [] ( const Key &k ) const;
-            Value &operator [] ( const Key &k );
+        void f( int );
+        void f( double );
     };
 
-
-    template< ConstIndexable CI, Key K >
-    auto
-    dangerous( CI &container, K key )
+    template< Concept C >
+    void
+    dangerous( C t )
     {
-        return container[ key ];
+        t.f( 1.0 );
     }
     ~~~
-
 
 The Issue
 ---------
 
-The issue is in what kind of container we pass to `dangerous`.  If we pass a `ConstOnlyMap`, then no
-unauthorized access to the container will happen.  If we pass `MutableOnlyMap`, it is unclear (to me
-at this time -- have to find this out) whether the definition of the concept will pass or fail.  The
-most dangerous case is `WideMap`.  `WideMap` unambiguously provides a `const`-member overload and
-therefore satisfies the definition completely.  The problem is that when the code for
-`dangerous< WideMap< Key, Value >, Key >` is generated, it will be generated as a normal template,
-with no special consideration given to the constraints of the concept.
+The issue is in what kind of object we pass to `dangerous`.  If we pass a `T1`, then no surprises
+happen -- the `double` is implicitly converted to `int`.  If we pass `T2`, the definition of the
+concept will pass and an implicit conversion to `int` will not happen.  The most dangerous case
+is `T3`.  `T3` provides a double and integer overload.  Although the concept requested an integer
+like signature, the double signature will be called.
 
 From the perspective of the compiler, the way it will actually compile the function `dangerous` is
 as if it were written:
 
     ~~~
-    template< typename CI, typename K >
+    template< typename CI >
     auto
-    dangerous( CI &container, K key )
+    dangerous( CI &c )
     {
-        return container[ key ];
+        return c.f( 1.0 )
     }
     ~~~
 
 
-At this point, the invocation of `CI::operator[]` will be whatever best matches `decltype( container )`,
-which is the non-const overload.
+At this point, the invocation of `CI::f` will be whatever best matches `decltype( 1.0 )`,
+which is the `double` oerload.
 
-When this happens, the container will actually be modified, which is contrary to the original intent
-of the author of `ConstIndexable`.  If, in a future standard, we were decide to repair this oversight,
-we are left with one of two incredibly unpallateable alternatives:
+If, in a future standard, we were decide to repair this oversight, we are left with one of two incredibly
+unpallateable alternatives and one unsatisfying one:
 
  1. Make constraint violations an error.
  2. Make the code do something different.
+ 3. Introduce a new syntax for indicating that a function definition is to be checked.
 
 In the first case, user code will break with obvious noises.  After that point, the user code would need
 to be rewritten:
@@ -120,12 +98,74 @@ In the second case, some code will break noisily when suitable overloads do not 
 will silently change behavior to better overloads when they exist.  Although this behavior is arguably more
 correct from a purist point of view, the instability of behavior across two standards will also be stillborn.
 
+The third alternative will not be dead-on-arrival, but it will mean that a new syntax for functions will
+be necessary.  Such a syntax will have to be distinct from whatever "preferred" and "natural" syntax comes
+with concepts in an earlier standard.
+
 This makes it starkly apparent that Concepts must have overload constraint support from the onset, otherwise
 the language will never get it -- the opportunity will be lost.
 
 
 Other Unforseen Examples
 ------------------------
+    ~~~
+    // Assume a concept: "Insertable", which requires a member function `insert` which takes
+    // an iterator and an object for insertion.
+
+    template< Insertable I, Iterator Iter, typename E >
+    void
+    addElement( I &x, Iter i, typename e )
+    {
+        x.insert( i, e );
+    }
+
+    // Assume a container that looks like `std::map` in terms of a two argument
+    // `insert` overload.  One taking `Iterator` and `Element`, the other taking two
+    // `Iterator`s
+    template< typename Container >
+    class Container
+    {
+        public:
+            class iterator; // ...
+
+        public:
+            void insert( iterator pos, Element e );
+
+    };
+
+    // Assume a type which is convertible to an `Iterator` and also to an `Element`.
+    class Janus
+    {
+        public:
+            operator Container< Janus >::iterator (); // ...
+
+            operator int (); // ...
+
+            // ...
+    };
+
+    class Member
+    {
+        public:
+            Member( int ); // ...
+    };
+
+    void
+    danger()
+    {
+        Container< Member > c;
+        // ...
+        Janus j= /* ... */;
+        addElement( c, c.begin(), j );
+    }
+    ~~~
+
+In this example, a the container will find itself adding multiple elements or with insane undefined behavior.
+This is because the `Janus` element he expected to have converted would preferentially be turned into an
+iterator instead of a `Member`.  The two-argument form of `insert` has a shorter conversion path, making it
+a better match.  This yields a behavior which is drastically different than that expected by the user
+in this example.
+
     ~~~
     // Assume a concept: "Drawable", in this namespace
     // Assume a concept: "Rotatable", in this namespace
