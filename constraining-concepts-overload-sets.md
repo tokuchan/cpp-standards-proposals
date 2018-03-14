@@ -152,18 +152,17 @@ namespace UserProgram {
 }
 ```
 
-+++ Reword
 In this example the intent of the three separate authors is apparent.  The author of the `PayrollLibrary`
-simply wished to afford his users the ability to represent employees at a company.  The author of
-the `AlgorithmLibrary` simply wished to afford his users the ability to print printable things and
-needed to write an internal helper method to better organize his code.  The author of `UserProgram`
-naievely wished to combine these reusable components for a simple task.  However, a subtle behavior
-of name lookup in function templates resulted in the termination of employees, rather than the intended
-call to an unimportant implementation detail.  Recall that the author of `AlgorithmLibrary` is perhaps
-unaware of the fact that types may exist which are `Stringable` yet interfere with the name he chose for
-his internal implementation detail.
+simply wished to afford his users the ability to represent employees at a company.  The author of the
+`AlgorithmLibrary` wished to afford his users the ability to print printable things and needed to write
+an internal helper method to better organize his code.  The author of `UserProgram` naievely wished
+to combine these reusable components for a simple task.  However, a subtle behavior of name lookup
+in function templates resulted in the termination of employees, rather than the intended call to an
+implementation detail.  This happened because the name of the implementation detail happened to collide
+with the name of some irrelevant API in the `Employee` object being processed.  Recall that the author of
+`AlgorithmLibrary` is likely unaware of the fact that types may exist which are `Stringable` and yet
+interfere with the name he chose for his internal implementation detail.
 
-+++ Reword:
 The authors of this paper recognize the importance of respecting the original intent of the programmers
 of these components without burying them in the details of defensive template writing.  These kinds of
 examples will come up frequently and perniciously in codebases which import third party libraries and
@@ -172,9 +171,8 @@ names that have multiple meanings to multiple people are likely to be used acros
 a codebase, and thus they are more likely to exhibit this pathological behavior.
 
 
-Addressing the Problem
-----------------------
-
+Why it is Important to Address this Now
+---------------------------------------
 
 Should the terse syntax be accepted into the current standard, without addressing this issue, then
 future attempts to repair this oversight in the language specification, leave us with one of two
@@ -195,182 +193,41 @@ lie in wait.
 In the third case, the benefits of the "natural" syntax are lost, as the best syntax for beginners is no
 longer the natural syntax!  This obviously defeats the intended purpose of Concepts with a natural syntax.
 
-Solution
---------
+Some Design Philosophy
+----------------------
 
+There are other cases where current Concepts can cause incorrect lookup.  This fails to deliver upon a big
+part of the expected benefits of this language feature.  The comparison has been drawn between C++ Virtual
+Functions and Concepts.  As Concepts are being presented to bring generic programming to the masses,
+it is vital that 3 core safety requirements be considered.  These requirements are similar to aspects
+of Object Oriented Programming.
 
-In the second case, some code will break noisily when suitable overloads do not exist, and further user code
-will silently change behavior to better overloads when they exist.  Although this behavior is arguably more
-correct from a purist point of view, the instability of behavior across two standards will also be stillborn.
-
-The third alternative will not be dead-on-arrival, but it will mean that a new syntax for functions will
-be necessary.  Such a syntax will have to be distinct from whatever "preferred" and "natural" syntax comes
-with Concepts in an earlier standard.
-
-This makes it starkly apparent that Concepts must have overload constraint support from the onset, otherwise
-the language will never get it -- the opportunity will be lost.
-
-
-Other Unforseen Examples
-------------------------
-    ```
-    // Assume a concept: "Insertable", which requires a member function `insert` which takes
-    // an iterator and an object for insertion.
-
-    template< Insertable I, Iterator Iter, typename E >
-    void
-    addElement( I &x, Iter i, typename e )
-    {
-        x.insert( i, e );
-    }
-
-    // Assume a container that looks like `std::map` in terms of a two argument
-    // `insert` overload.  One taking `Iterator` and `Element`, the other taking two
-    // `Iterator`s
-    template< typename Container >
-    class Container
-    {
-        public:
-            class iterator; // ...
-
-        public:
-            void insert( iterator pos, Element e );
-
-    };
-
-    // Assume a type which is convertible to an `Iterator` and also to an `Element`.
-    class Janus
-    {
-        public:
-            operator Container< Janus >::iterator (); // ...
-
-            operator int (); // ...
-
-            // ...
-    };
-
-    class Member
-    {
-        public:
-            Member( int ); // ...
-    };
-
-    void
-    danger()
-    {
-        Container< Member > c;
-        // ...
-        Janus j= /* ... */;
-        addElement( c, c.begin(), j );
-    }
-    ```
-
-In this example, a the container will find itself adding multiple elements or with insane undefined behavior.
-This is because the `Janus` element he expected to have converted would preferentially be turned into an
-iterator instead of a `Member`.  The two-argument form of `insert` has a shorter conversion path, making it
-a better match.  This yields a behavior which is drastically different than that expected by the user
-in this example.
-
-    ```
-    // Assume a concept: "Drawable", in this namespace
-    // Assume a concept: "Rotatable", in this namespace
-    // Assume a concept: "RotatableDrawable", in this namespace
-
-    class Cowboy
-    {
-        public:
-            enum GunState { in= 0, out= 1 };
-
-        private:
-            GunState gunState;
-
-        public:
-            inline friend void draw( Cowboy &c ) { c.gunState= GunState::out; }
-            inline friend GunState draw( const Cowboy &c ) { return c.gunState; }
-
-            void rotate() {}
-    };
-
-    class Shape
-    {
-        public:
-            // ...
-
-        public:
-            inline friend bool draw( const Shape &s ) { /* graphics package details */ }
-
-            void rotate() {}
-    };
-
-    template< RotatableDrawable RD >
-    bool
-    turnAndDraw( RD thing, bool redraw )
-    {
-        thing.rotate();
-        if( redraw ) return draw( thing );
-        return false;
-    }
-    ```
-
-
-    There are also subtleties that will arise in addition to const when dealing with this problem:
-
-    ```
-    // Assume a concept: "Composable", in this namespace
-
-    inline
-    std::string
-    compose( std::string l, std::string r );
-
-    class Function
-    {
-        private:
-            // ...
-
-        public:
-            inline friend Function compose( Function, Function );
-    };
-
-    class Unicode
-    {
-        public:
-            // ...
-
-        public:
-            operator const std::string &() const;
-    }; 
-
-    template< Composable C >
-    bool
-    mix( C a, C b )
-    {
-        compose( a, b );
-    }
-    ```
-
-There are other cases where this can cause incorrect lookup.  This fails to deliver upon a big part of the
-expected benefits of a new language feature.  The comparison has been drawn between C++ Virtual Functions
-and Concepts.  As Concepts are being presented to bring generic programming to the main stream,
-it is vital that it have 3 core safety components (compared to similar features in Object Oriented code):
-
-1. An object passed to a function meets the qualifications that a concept describes.  This is
+1. An object passed to a function must meet the qualifications that a concept describes.  This is
    analagous to how a function taking a pointer or reference to a class has the parameter checked for
-   substitutiablility.  The current Concepts proposal provides this.
+   substitutiablility.  The current Concepts proposal provides this extremely well.
 
-2. An object passed to a function had its definition checked for correctness by the compiler.  This
-   is analagous to how a class is checked for abstractness.  The current Concepts proposal lacks this,
-   but some have claimed that it is trivial to add this.  Whether this is the case is beyond the scope
-   of this paper.
+2. An object written to be used as a model of a concept should have its definition checked for completeness
+   by the compiler.  This is analagous to how a class is checked for abstractness vs concreteness.  The
+   current Concepts proposal lacks this; however, this is approximated very well, by the concept checking
+   machinery.  This guarantees that every class which is matched to concept provides a definition for every
+   required operation under that concept, thus satisfying the requirements of the concept.
 
-3. An object passed to a function only has functions called on it that are described by its Concept.
-   This is analagous to how a function taking a pointer to base is only allowed to call members of the
-   base -- new interfaces added in the derived class are not considered for better matching.  The current
-   Concepts proposal lacks this and this oversight has yet to be discussed.  The original C++0x Concepts
-   did have this capability, but via a different mechanism.
+3. A constrained function is only capable of calling the functions on its parameters that are described by
+   its constraining Concepts.  This is analagous to how a function taking a pointer to base is only allowed
+   to call members of the base -- new APIs added in any derived class are not considered to be better
+   matches, ever.  The current Concepts proposal lacks anything resembling this, and this oversight has yet
+   to be addressed.  It is this deficiency which our paper seeks to remedy.
 
-We propse that the Concepts feature is incomplete without constrained overload set for usage.  It is
-vital that we explore this issue.
+We propose that the Concepts feature is incomplete without constrained overload set for usage, thus satisfying
+the third requirement of any interface-like abstraction.  It is vital that we explore this issue.
 
+We recognize that some complexity in the space of constrained generics will always be present, but we feel
+that it is best to offload this complexity to the author of a concept rather than to the implementor of a
+constrained function.  This is because we believe that fewer concept authors will exist than concept "users".
+Additionally, the level of expertise of a concept author is inherently higher than the intended audience
+of constrained functions.  In the worst case scenario, a naive definition of a concept will merely result
+in a few missed opportunities for more suitable overloads to handle move semantics, avoid conversions,
+and other shenanigans
 
 What This Paper is  _<b><u>NOT</b></u>_  Proposing
 --------------------------------------------------
@@ -386,6 +243,7 @@ What This Paper is  _<b><u>NOT</b></u>_  Proposing
  9. Any form of extra code generation
 10. Any form of extra type generation
 11. Relying upon the optimizer to make any aspect of the code generated by this solution more efficient
+
 
 Our Proposed Solution
 ---------------------
@@ -449,11 +307,11 @@ parameter list is truncated at M.
 	(since C++20)
 <p>
 <font color=green>
-<li face="X">  If the call to the function is within a constrained template function and at least one of the
-   parameters is a concept and the function was found by unqualified name lookup and the lookup found
-   a name that is a member of or in the namespace of the concept, then the function must be one of
-   the functions that was used in the satisfaction of the constraint of the concept parameter involved
-   in the unqualified name lookup.
+<li face="X"> 
+If at least one of the arguments to the function is constrained and that function was found by
+unqualified name lookup and the lookup found a name that is otherwise not visible at the calling
+location, then the function is only viable if that function was necessary to satisfy the argument's
+concept constraint.
     (this paper)
    
 </font>
@@ -465,6 +323,103 @@ argument corresponds to non-const lvalue reference parameter or an lvalue argume
 reference parameter, the function is not viable.
 
 </table>
+
+Objections, Questions, and Concerns
+-----------------------------------
+
+Q: Isn't this just C++0x Concepts with definition checking all over again?
+A: No.  C++0x Concepts used mechanisms and techniques which are drastically different to the solution
+   we have proposed.  We require no generation of any adaptors, maps, or proxies.  We propose altering
+   and refining the lookup rules to further obey the restrictions imposed by Concepts, in a manner similar
+   to what is already in the existing design.  We feel that this is appropriate, because Concepts already
+   requires some alteration to the lookup rules, and our design appears to be consistent with the general
+   lookup rule restrictions thereby imposed.  Concept restrictions are enforced in C++ through lookup rules,
+   not through any other mechanism.
+
+Q: Will I be able to call internal helper functions to my constrained function using an unqualified name?
+A: Yes.  We place no restrictions on the calling of functions in namespaces that are unrelated to the
+   concept used in a constraint.  The namespaces associated with the types that are constrained are also
+   still searched, but only the names which are necessary (in some fashion) to meet the requirements of the
+   concept are considered to be viable.  In some sense this is the existing Concepts restriction on calling
+   a constrained function applied in reverse -- constraints restrict which functions are called based upon
+   their arguments.  The current restriction prevents calling a function which is not prepared to accept
+   a type.  Our refinement prevents calling a function which is not presented as part of the requirements
+   on a type.
+
+Q: Isn't your real problem with {ADL, const vs. non-const overloads, overload resolution, dependent lookup,
+   etc.} and not with the lookup rules of Concepts today?
+A: Absolutely not.  We have examples of unexpected lookup for each and every one of these cases.  We are
+   not convinced that our problem is with every single one of the above aspects of the language.  There
+   are some cases which will be redundantly resolved by improving those aspects of the language; however,
+   many problem cases within each of these domains still remains.  This is especially true of ADL functions.
+   ADL functions are intended to be part of the interface of a class; however, a constrained value is also
+   a constrained interface.
+
+Q: How do I actually invoke ADL functions that I want invoked in my constrained functions?
+
+Q: What about calling efficient `swap` on an `Assignable`?
+
+
+Design Considerations
+---------------------
+
+- Where these rules might apply:
+  - Explicit templates
+  - Any terse syntax templates
+  - Any constrained templates
+
+There are a few different  in which
+
+Any design that proposes to change lookup rules should not invalidate any code written under those
+rules today.  Because of this, we do not propose that the lookup rules should be changed when
+evaluating names within a "classical" template context.  However, we see a number of opportunities
+to apply our modified lookup scheme:
+
+### Terse syntax constrained functions
+
+The terse syntax intends to open generic programming to a wider audience, as discussed earlier.
+We feel that it is obvious that such terse syntax functions be subject to rules which provide a more
+intuitive result.  Therefore we suggest that any terse syntax considered by the committe must have
+the intuitive semantics provided by our proposal.
+
+###  All constrained function templates
+
+Any expansion of a terse syntax from the terse form into a "canonical" production of a constrained
+template function declaration could automatically have these rules applied.  This seems fairly obvious
+in many respects, because the purpose of Concepts are to afford better selection of applicable functions
+in name lookup and overload resolution.  When a user writes a constrained function, even using template
+syntax, he or she is explicitly choosing to have the semantics of Concepts applied to their function.
+Therefore, it seems like a reasonable choice to make every constrained function obey these lookup rules.
+
+
+### Opt-in for these rules as part of the definition of a constrained function template
+
+We acknowledge that the application of these constrained lookup rules in the definition of a function
+template may be controversial.
+
+First because, templates that gain concepts may change meaning.
+
+
+Second because, the power user of templates may wish to enforce concept checking on his callers, but not
+within his function definition.
+
+....
+
+Whichever of the choices for the application of modified lookup rules to constrained function templates,
+the language loses no expressivity as choice is possible under each alternative.
+
+
+3.  Constrained function templates which use an additional keyword to opt into these rules
+
+
+
+- Does short-circuit behavior of concept satisfaction make certain overloads invisible, or should
+  both sides of a disjunction be followed for the purposes of "constrained name lookup".
+
+- Calls dependent upon a constrained parameter are the only calls whose name lookup we propose to modify.
+  (Sort of answered all over.)
+
+- Clarify the helpers problem.  (We believe that our solution does handle this.) (Answered in Q&A)
 
 
 Revision History
@@ -478,3 +433,5 @@ Jacksonville, on 2018-03-12.  The guidance from the group was strongly positive:
 <p>
 SF: 10 - F: 21 - N: 22 - A: 7 - SA: 1
 
+
+<!-- Note to us: Ask Gaby about an implementation in MSVC.  Ask Andrew Sutton about help for an impl in GCC -->
