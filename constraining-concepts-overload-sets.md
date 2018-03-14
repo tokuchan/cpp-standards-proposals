@@ -31,7 +31,7 @@ standard.  In other words, this is our only chance to get this right.
 Simple Example
 --------------
 
-    ~~~
+    ```
     // Assume a concept `Concept` which expects a member `f` taking one integer
 
     struct T1
@@ -56,7 +56,7 @@ Simple Example
     {
         t.f( 1.0 );
     }
-    ~~~
+    ```
 
 The Issue
 ---------
@@ -70,14 +70,14 @@ like signature, the double signature will be called.
 From the perspective of the compiler, the way it will actually compile the function `dangerous` is
 as if it were written:
 
-    ~~~
+    ```
     template< typename CI >
     auto
     dangerous( CI &c )
     {
         return c.f( 1.0 )
     }
-    ~~~
+    ```
 
 
 At this point, the invocation of `CI::f` will be whatever best matches `decltype( 1.0 )`,
@@ -93,14 +93,14 @@ unpallateable alternatives and one unsatisfying one:
 In the first case, user code will break with obvious noises.  After that point, the user code would need
 to be rewritten:
 
-    ~~~
+    ```
     template< ConstrainedKey CI, Key K >
     auto
     dangerous( CI &container, K key )
     {
         return std::as_const( container )[ std::as_const( key ) ];
     }
-    ~~~
+    ```
 
 Although I am the author of `as_const`, this is not what I had in mind when I proposed it.  This change would
 not be well received by users and would almost certainly be stillborn.
@@ -119,7 +119,7 @@ the language will never get it -- the opportunity will be lost.
 
 Other Unforseen Examples
 ------------------------
-    ~~~
+    ```
     // Assume a concept: "Insertable", which requires a member function `insert` which takes
     // an iterator and an object for insertion.
 
@@ -169,7 +169,7 @@ Other Unforseen Examples
         Janus j= /* ... */;
         addElement( c, c.begin(), j );
     }
-    ~~~
+    ```
 
 In this example, a the container will find itself adding multiple elements or with insane undefined behavior.
 This is because the `Janus` element he expected to have converted would preferentially be turned into an
@@ -177,7 +177,7 @@ iterator instead of a `Member`.  The two-argument form of `insert` has a shorter
 a better match.  This yields a behavior which is drastically different than that expected by the user
 in this example.
 
-    ~~~
+    ```
     // Assume a concept: "Drawable", in this namespace
     // Assume a concept: "Rotatable", in this namespace
     // Assume a concept: "RotatableDrawable", in this namespace
@@ -216,12 +216,12 @@ in this example.
         if( redraw ) return draw( thing );
         return false;
     }
-    ~~~
+    ```
 
 
     There are also subtleties that will arise in addition to const when dealing with this problem:
 
-    ~~~
+    ```
     // Assume a concept: "Composable", in this namespace
 
     inline
@@ -252,7 +252,7 @@ in this example.
     {
         compose( a, b );
     }
-    ~~~
+    ```
 
 There are other cases where this can cause incorrect lookup.  This fails to deliver upon a big part of the
 expected benefits of a new language feature.  The comparison has been drawn between C++ Virtual Functions

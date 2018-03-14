@@ -1,4 +1,4 @@
 all: constraining-concepts-overload-sets.html
 
 %.html: %.md
-	( echo "<html><body>" ; markdown $< ) > $@
+	( echo "<html><body>" ; cmark $< ) > $@
