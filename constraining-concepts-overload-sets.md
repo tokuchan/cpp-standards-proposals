@@ -5,9 +5,6 @@ ISO/IEC JTC1 SC22 WG21 P0782R1
 
     ADAM David Alan Martin  (adam@recursive.engineer)
     Erich Keane             (erich.keane@intel.com)
-	Hal Finkel
-	Lisa Lippincott
-	Gabriel Dos Reis
 
 Abstract
 --------
@@ -17,14 +14,14 @@ non-expert developer.  In general it makes great strides towards this end partic
 of invoking a generic function; however, the Concepts design does not deliver on this promise in the
 implementation of a generic function.  This is because the feature does not constrain the overload set
 of a template-concept function itself.  This is contrary to the expectations of non-experts, because
-to them concepts should strongly resemble the callable properties of an interface.  This mental model
-drives their expectations to believe that concepts offer a mechanism to limit the set of operations
+to them Concepts should strongly resemble the callable properties of an interface.  This mental model
+drives their expectations to believe that Concepts offer a mechanism to limit the set of operations
 which would be visible from within their constrained function to those which are specified by concept
 used by the constrained function.
 
 The fact that this is not the case in constrained functions can lead to surprising violations of
 the author's expectations thereof.  Unfortunately, this oversight cannot be corrected later.  To correct
-this later would entail silent behavioral changes to existing code after the release of concepts in a
+this later would entail silent behavioral changes to existing code after the release of Concepts in a
 standard.  In other words, this is our only chance to get this right.
 
 
@@ -76,7 +73,6 @@ formatLogarithmicValue( IntegerSerializer &serializer, int integerValue ) {
 }
 ```
 
-
 At this point, the invocation of `IntegerSerializer::serializer` will be whatever best matches
 `decltype( std::log( integerValue ) )`, which is the overload with `double` as its parameter.
 This is likely surprising behavior to the author of `formatLogarithmicValue`, as well as the caller
@@ -88,7 +84,7 @@ function!
 The only way for an author of such a constrained function to avoid this, at present, is to rewrite
 `formatLogarithmicValue` in such a way as to prevent the incorrect lookup.  Unfortunately, this requires
 a level of C++  expertise regarding name lookup and overload resolution which is at odds with the level
-of expertise expected of the audience of concepts, viz. the non-expert programmer.  Such a rewrite
+of expertise expected of the audience of Concepts, viz. the non-expert programmer.  Such a rewrite
 might appear thus:
 
 ```
@@ -99,30 +95,30 @@ formatLogarithmicValue( IntegerSerializer &serializer, int integerValue ) {
 }
 ```
 
-This does not appear to be code that would be expected of the non-expert audience targetted by Concepts.
+This does not appear to be code that would be expected of the audience targetted by Concepts.  Additionally,
+although one of the authors of this paper is author of `std::as_const`, this is not the purpose nor audience
+he had in mind when he proposed it.
 
+Should the terse syntax be accepted into the current standard, without addressing this issue, then
+future attempts to repair this oversight in the language specification, leave us with one of two
+incredibly unpallateable alternatives and one unsatisfying one:
 
-If, in a future standard, we were to decide to repair this oversight, we are left with one of two incredibly
-unpallateable alternatives and one unsatisfying one:
-
- 1. Make constraint violations an error.
- 2. Make the code do something different.
- 3. Introduce a new syntax for indicating that a function definition is to be checked. (Defn' checking?)
+ 1. Make constraint violations an error, thus requiring extreme verbosity.
+ 2. Silently change the meaning of existing code, with ODR implications, because these constrained functions
+    are templates.
+ 3. Introduce a new syntax for indicating that a function definition should be processed in a manner which
+    is more consistent with average programmer expectations; 
 
 In the first case, user code will break with obvious noises.  After that point, the user code would need
-to be rewritten:
+to be rewritten.  
 
-    ```
-    template< ConstrainedKey CI, Key K >
-    auto
-    dangerous( CI &container, K key )
-    {
-        return std::as_const( container )[ std::as_const( key ) ];
-    }
-    ```
+In the second case, massive fallout from ODR, silent breaking changes, and other pernicious demons arise.
 
-Although I am the author of `as_const`, this is not what I had in mind when I proposed it.  This change would
-not be well received by users and would almost certainly be stillborn.
+In the third case, the benefits of the "natural" syntax are lost, as the best syntax for beginners is no
+longer the natural syntax!
+
+---
+
 
 In the second case, some code will break noisily when suitable overloads do not exist, and further user code
 will silently change behavior to better overloads when they exist.  Although this behavior is arguably more
@@ -130,7 +126,7 @@ correct from a purist point of view, the instability of behavior across two stan
 
 The third alternative will not be dead-on-arrival, but it will mean that a new syntax for functions will
 be necessary.  Such a syntax will have to be distinct from whatever "preferred" and "natural" syntax comes
-with concepts in an earlier standard.
+with Concepts in an earlier standard.
 
 This makes it starkly apparent that Concepts must have overload constraint support from the onset, otherwise
 the language will never get it -- the opportunity will be lost.
@@ -275,7 +271,7 @@ in this example.
 
 There are other cases where this can cause incorrect lookup.  This fails to deliver upon a big part of the
 expected benefits of a new language feature.  The comparison has been drawn between C++ Virtual Functions
-and Concepts.  As concepts are being presented to bring generic programming to the main stream,
+and Concepts.  As Concepts are being presented to bring generic programming to the main stream,
 it is vital that it have 3 core safety components (compared to similar features in Object Oriented code):
 
 1. An object passed to a function meets the qualifications that a concept describes.  This is
@@ -290,7 +286,7 @@ it is vital that it have 3 core safety components (compared to similar features 
 3. An object passed to a function only has functions called on it that are described by its Concept.
    This is analagous to how a function taking a pointer to base is only allowed to call members of the
    base -- new interfaces added in the derived class are not considered for better matching.  The current
-   concepts proposal lacks this and this oversight has yet to be discussed.  The original C++0x concepts
+   Concepts proposal lacks this and this oversight has yet to be discussed.  The original C++0x Concepts
    did have this capability, but via a different mechanism.
 
 We propse that the Concepts feature is incomplete without constrained overload set for usage.  It is
