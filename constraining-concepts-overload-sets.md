@@ -12,15 +12,15 @@ ISO/IEC JTC1 SC22 WG21 P0782R1
 Abstract
 --------
 
-As introduced, the central purpose of Concepts in the C++ DIS is to simplify generic programming
-such that it is approachable to the non-expert developer.  In general it makes great strides towards
-this end particularly in the capacity of invoking a generic function; however, the Concepts design
-does not deliver on this promise in the implementation of a generic function.  This is because the
-feature does not constrain the overload set of a template-concept function itself.  This is contrary
-to the expectations of non-experts, because to them concepts should strongly resemble the callable
-properties of an interface.  This mental model drives their expectations to believe that concepts
-offer a mechanism to limit the set of operations which would be visible from within their constrained
-function to those which are specified by concept used by the constrained function.
+The central purpose of Concepts is to simplify generic programming such that it is approachable to the
+non-expert developer.  In general it makes great strides towards this end particularly in the capacity
+of invoking a generic function; however, the Concepts design does not deliver on this promise in the
+implementation of a generic function.  This is because the feature does not constrain the overload set
+of a template-concept function itself.  This is contrary to the expectations of non-experts, because
+to them concepts should strongly resemble the callable properties of an interface.  This mental model
+drives their expectations to believe that concepts offer a mechanism to limit the set of operations
+which would be visible from within their constrained function to those which are specified by concept
+used by the constrained function.
 
 The fact that this is not the case in constrained functions can lead to surprising violations of
 the author's expectations thereof.  Unfortunately, this oversight cannot be corrected later.  To correct
@@ -28,60 +28,79 @@ this later would entail silent behavioral changes to existing code after the rel
 standard.  In other words, this is our only chance to get this right.
 
 
-Simple Example
---------------
+Simple Motivating Example
+-------------------------
 
-    ```
-    // Assume a concept `Concept` which expects a member `f` taking one integer
+```
+// Assume a concept, `IntegerSerializer` which requires a member function called `serialize` which
+// takes an `int` and returns a `std::string` with the representation of that integer, in the format
+// appropriate to the implementation.
 
-    struct T1
-    {
-        void f( int );
-    };
+class SimpleSerializer {
+    std::string serialize( int value );
+};
 
-    struct T2
-    {
-        void f( double );
-    };
+struct PrecisionSerializer {
+    std::string serialize( double preciseValue );
+};
 
-    struct T3
-    {
-        void f( int );
-        void f( double );
-    };
+struct LoanInterestSerializer {
+    std::string serialize( int interestBasisPoints );
+    std::string serialize( double interestRate );
+};
 
-    template< Concept C >
-    void
-    dangerous( C t )
-    {
-        t.f( 1.0 );
-    }
-    ```
+std::string formatLogarithmicValue( IntegerSerializer &serializer, int integerValue ) {
+    return serializer.serialize( std::log( integerValue ) );
+}
+```
 
 The Issue
 ---------
 
-The issue is in what kind of object we pass to `dangerous`.  If we pass a `T1`, then no surprises
-happen -- the `double` is implicitly converted to `int`.  If we pass `T2`, the definition of the
-concept will pass and an implicit conversion to `int` will not happen.  The most dangerous case
-is `T3`.  `T3` provides a double and integer overload.  Although the concept requested an integer
-like signature, the double signature will be called.
+The issue is in what kind of object we pass to `formatLogarithmicValue`.  If we pass an `SimpleSerializer`,
+then no surprises happen -- the `double` is implicitly converted to `int`.  If we pass `PrecisionSerializer`,
+then the definition of the concept will pass and an implicit conversion to `int` will happen, which is
+potentially surprising; however, many programmers are reasonably comfortable with the idea of fundamental
+type conversions.  The most surprising case is that of `LoanInterestSerializer`.  `LoanInterestSerializer`
+provides a `double` and an `int` overload.  Although the concept requested function with a signature that
+accepts an `int`, the overload which accepts `double` in its signature will be called.
 
-From the perspective of the compiler, the way it will actually compile the function `dangerous` is
-as if it were written:
+From the perspective of the compiler, the way it will actually compile the function `formatLogarithmicValue`
+is as if it were written:
 
-    ```
-    template< typename CI >
-    auto
-    dangerous( CI &c )
-    {
-        return c.f( 1.0 )
-    }
-    ```
+```
+template< typename IntegerSerializer >
+std::string
+formatLogarithmicValue( IntegerSerializer &serializer, int integerValue ) {
+    return serializer.serialize( std::log( integerValue ) );
+}
+```
 
 
-At this point, the invocation of `CI::f` will be whatever best matches `decltype( 1.0 )`,
-which is the `double` overload.
+At this point, the invocation of `IntegerSerializer::serializer` will be whatever best matches
+`decltype( std::log( integerValue ) )`, which is the overload with `double` as its parameter.
+This is likely surprising behavior to the author of `formatLogarithmicValue`, as well as the caller
+of `formatLogarithmicValue`.  Both of these authors would expect that the constraints described by
+the concept would be obeyed, yet paradoxically the overload which was not the best match for the
+constraint was actually the overload that was actually invoked in the body of the "constrained"
+function!
+
+The only way for an author of such a constrained function to avoid this, at present, is to rewrite
+`formatLogarithmicValue` in such a way as to prevent the incorrect lookup.  Unfortunately, this requires
+a level of C++  expertise regarding name lookup and overload resolution which is at odds with the level
+of expertise expected of the audience of concepts, viz. the non-expert programmer.  Such a rewrite
+might appear thus:
+
+```
+std::string
+formatLogarithmicValue( IntegerSerializer &serializer, int integerValue ) {
+    return std::as_const( serializer ).serialize( static_cast< int >(
+            std::log( std::as_const( integerValue ) ) ) );
+}
+```
+
+This does not appear to be code that would be expected of the non-expert audience targetted by Concepts.
+
 
 If, in a future standard, we were to decide to repair this oversight, we are left with one of two incredibly
 unpallateable alternatives and one unsatisfying one:
