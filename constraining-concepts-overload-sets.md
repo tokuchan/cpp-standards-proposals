@@ -12,13 +12,21 @@ ISO/IEC JTC1 SC22 WG21 P0782R1
 Abstract
 --------
 
-The concepts proposal does not constrain the overload set of a template-concept function.
-This can lead to some surprising violations of the original concept author's expectations.
-A constrained-overload set for use in name matching in a template is necessary to make this
-safe; this was a part of the original C++0x concepts design and it appears to have been
-forgotten.  Unfortunately, this is an oversight that cannot be corrected later -- to correct
-this later would entail silent behavioral changes to far too much code that will exist using
-concepts as we release them.  In other words, this is our only chance to get this right.
+As introduced, the central purpose of Concepts in the C++ DIS is to simplify generic programming
+such that it is approachable to the non-expert developer.  In general it makes great strides towards
+this end particularly in the capacity of invoking a generic function; however, the Concepts design
+does not deliver on this promise in the implementation of a generic function.  This is because the
+feature does not constrain the overload set of a template-concept function itself.  This is contrary
+to the expectations of non-experts, because to them concepts should strongly resemble the callable
+properties of an interface.  This mental model drives their expectations to believe that concepts
+offer a mechanism to limit the set of operations which would be visible from within their constrained
+function to those which are specified by concept used by the constrained function.
+
+The fact that this is not the case in constrained functions can lead to surprising violations of
+the author's expectations thereof.  Unfortunately, this oversight cannot be corrected later.  To correct
+this later would entail silent behavioral changes to existing code after the release of concepts in a
+standard.  In other words, this is our only chance to get this right.
+
 
 Simple Example
 --------------
