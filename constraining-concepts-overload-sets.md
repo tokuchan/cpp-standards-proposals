@@ -51,9 +51,6 @@ std::string formatLogarithmicValue( IntegerSerializer &serializer, int integerVa
 }
 ```
 
-The Issue
----------
-
 The issue is in what kind of object we pass to `formatLogarithmicValue`.  If we pass an `SimpleSerializer`,
 then no surprises happen -- the `double` is implicitly converted to `int`.  If we pass `PrecisionSerializer`,
 then the definition of the concept will pass and an implicit conversion to `int` will happen, which is
@@ -99,6 +96,86 @@ This does not appear to be code that would be expected of the audience targetted
 although one of the authors of this paper is author of `std::as_const`, this is not the purpose nor audience
 he had in mind when he proposed it.
 
+An Example at Scale
+-------------------
+
+```
+namespace ConceptLibrary {
+    // Assume a concept, `Stringable` which requires a member function called `toString` which
+    // when called returns a string representation of the object.
+}
+
+namespace PayrollLibrary {
+	class Employee {
+		private:
+			std::string name;
+
+		public:
+			Employee( std::string initialName );
+
+            // This satisfies the Stringable concept, and the author of this type knows that.
+			std::string toString() const;
+
+			bool operator == ( const Employee &rhs ) const;
+
+            // The following functions are friend, to indicate that ADL is intended.
+
+            // Terminate the specified employee's employment
+            friend void fire( const Employee &emp );
+
+            // Initiate the specified employee's employment
+            friend void hire( Employee emp );
+
+            // Returns true if the specified employee is employed and false otherwise.
+            friend bool worksHere( const Employee &emp );
+	};
+}
+
+namespace AlgorithmLibrary {
+	// This "fires" off a stringable object to be processed.
+	void fire( const ConceptLibrary::Stringable &s ) {
+        std::cout << "I am interested in " << s.toString() << std::endl;
+    }
+
+	void
+	printAll( const std::vector< ConceptLibrary::Stringable > &v ) {
+		for( auto &&s: v ) fire( s );
+	}
+}
+
+namespace UserProgram {
+	void code() {
+        std::vector< PayrollLibrary::Employee > team;
+		team.emplace_back( "John Doe" );
+		AlgorithmLibrary::printAll( team );
+	}
+}
+```
+
++++ Reword
+In this example the intent of the three separate authors is apparent.  The author of the `PayrollLibrary`
+simply wished to afford his users the ability to represent employees at a company.  The author of
+the `AlgorithmLibrary` simply wished to afford his users the ability to print printable things and
+needed to write an internal helper method to better organize his code.  The author of `UserProgram`
+naievely wished to combine these reusable components for a simple task.  However, a subtle behavior
+of name lookup in function templates resulted in the termination of employees, rather than the intended
+call to an unimportant implementation detail.  Recall that the author of `AlgorithmLibrary` is perhaps
+unaware of the fact that types may exist which are `Stringable` yet interfere with the name he chose for
+his internal implementation detail.
+
++++ Reword:
+The authors of this paper recognize the importance of respecting the original intent of the programmers
+of these components without burying them in the details of defensive template writing.  These kinds of
+examples will come up frequently and perniciously in codebases which import third party libraries and
+work in multiple groups each with different naming conventions.  Even without variance in naming conventions,
+names that have multiple meanings to multiple people are likely to be used across disparate parts of
+a codebase, and thus they are more likely to exhibit this pathological behavior.
+
+
+Addressing the Problem
+----------------------
+
+
 Should the terse syntax be accepted into the current standard, without addressing this issue, then
 future attempts to repair this oversight in the language specification, leave us with one of two
 incredibly unpallateable alternatives and one unsatisfying one:
@@ -109,15 +186,17 @@ incredibly unpallateable alternatives and one unsatisfying one:
  3. Introduce a new syntax for indicating that a function definition should be processed in a manner which
     is more consistent with average programmer expectations; 
 
-In the first case, user code will break with obvious noises.  After that point, the user code would need
-to be rewritten.  
+In the first case, vast amounts of code will fail to compile in noisy ways.  After that point, the user code
+would need to be rewritten, in a manner similar to the necessary rewrites as described above. 
 
-In the second case, massive fallout from ODR, silent breaking changes, and other pernicious demons arise.
+In the second case, massive fallout from ODR, silent subtle semantic changes, and other unforseen dangers
+lie in wait.
 
 In the third case, the benefits of the "natural" syntax are lost, as the best syntax for beginners is no
-longer the natural syntax!
+longer the natural syntax!  This obviously defeats the intended purpose of Concepts with a natural syntax.
 
----
+Solution
+--------
 
 
 In the second case, some code will break noisily when suitable overloads do not exist, and further user code
