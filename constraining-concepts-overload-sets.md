@@ -382,7 +382,9 @@ We feel that it is obvious that such terse syntax functions be subject to rules 
 intuitive result.  Therefore we suggest that any terse syntax considered by the committe must have
 the intuitive semantics provided by our proposal.
 
-###  All constrained function templates
+### Template syntax constrained function
+
+####  All constrained function templates
 
 Any expansion of a terse syntax from the terse form into a "canonical" production of a constrained
 template function declaration could automatically have these rules applied.  This seems fairly obvious
@@ -392,29 +394,43 @@ syntax, he or she is explicitly choosing to have the semantics of Concepts appli
 Therefore, it seems like a reasonable choice to make every constrained function obey these lookup rules.
 
 
-### Opt-in for these rules as part of the definition of a constrained function template
+#### Opt-in for these rules as part of the definition of a constrained function template
 
-We acknowledge that the application of these constrained lookup rules in the definition of a function
-template may be controversial.
+We acknowledge that the application of these constrained lookup rules in the definition of a function A
+user acting in good faith, trying to modernize a code base, from unconstrained templates to constrained
+templates, who does not use the terse syntax, may wind up causing subtle changes in the semantics and or
+ODR violations.  Additionally, the template expert is already intimately familiar with the consequences of
+C++'s uninituitive lookup rules in templates and may wish to leverage the semantics afforded by these rules
+in the implementation of his template function -- he only wishes to constrain the callers, but not himself.
 
-First because, templates that gain concepts may change meaning.
-
-
-Second because, the power user of templates may wish to enforce concept checking on his callers, but not
-within his function definition.
-
-....
+Therefore it may be necessary to control the application of this modified rule through the use of
+a signifying keyword.  We propose `explicit template< ... >`, as this syntax, as it reads reasonably
+well and clearly indicates intent.  Although this proposed syntax uses the `template` keyword, which is
+already indicitive of potential lookup dangers, it eschews the pitfalls for the `template< ... >` case.
 
 Whichever of the choices for the application of modified lookup rules to constrained function templates,
 the language loses no expressivity as choice is possible under each alternative.
 
 
-3.  Constrained function templates which use an additional keyword to opt into these rules
-
-
+### Behavior of These Rules Under Short Circuit of Disjunction
 
 - Does short-circuit behavior of concept satisfaction make certain overloads invisible, or should
   both sides of a disjunction be followed for the purposes of "constrained name lookup".
+
+We preserve the viability of overloads which are found on either branch of a disjunction, because
+a user would reasonably expect these overloads to be available if those constraints are satisfied.
+For branches of a disjunction which are not satisfied, those overloads will be unavailable, as 
+the constraint wasn't satisfied.  This seems to result in a viable overload set which most closely
+conforms to user expectations.
+
+
+
+---
+
+######## Notes
+
+
+
 
 - Calls dependent upon a constrained parameter are the only calls whose name lookup we propose to modify.
   (Sort of answered all over.)
