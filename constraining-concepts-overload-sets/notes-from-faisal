@@ -1,0 +1,30 @@
+Add the concept definitions to the examples themselves.  It helps people think about the way things
+get parsed, and make sure that there are no hidden conversions or such.
+
+
+Add comments before terse syntax templates to make it clear that they are constrained functions.
+
+
+Perhaps even avoid the terse syntax...
+
+
+Carry forward rationale across revisions...
+
+
+Have a note that is post-hoc definition checking (say that part as "better error messages")
+during instantiation.  (Function not found during constraint checking.)
+
+Concept = requires { g( conceptParam, int ) -> Concept2 };
+
+f( g( conceptParam, foobar ) )
+
+
+Equality comparison between string & string_view.... needs some pass for implicit conversion...
+
+
+Other notes:
+
+Reference the "are concepts delivering over enable_if" paper from albuquerque and show that our
+proposal actually delivers on the error messages.
+
+Reference 
