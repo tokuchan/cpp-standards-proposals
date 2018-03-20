@@ -33,20 +33,31 @@ Simple Motivating Example
 // takes an `int` and returns a `std::string` with the representation of that integer, in the format
 // appropriate to the implementation.
 
-class SimpleSerializer {
-    std::string serialize( int value );
+template< typename Instance >
+concept IntegerSerializer= requires( Instance instance, int value )
+{
+    { std::as_const( instance ).serialize( value ) } -> void;
+}
+
+
+class SimpleSerializer
+{
+    std::string serialize( int value ) const;
 };
 
-struct PrecisionSerializer {
-    std::string serialize( double preciseValue );
+struct PrecisionSerializer
+{
+    std::string serialize( double preciseValue ) const;
 };
 
-struct LoanInterestSerializer {
-    std::string serialize( int interestBasisPoints );
-    std::string serialize( double interestRate );
+struct LoanInterestSerializer
+{
+    std::string serialize( int interestBasisPoints ) const;
+    std::string serialize( double interestRate ) const;
 };
 
-std::string formatLogarithmicValue( IntegerSerializer &serializer, int integerValue ) {
+std::string formatLogarithmicValue( IntegerSerializer &serializer, int integerValue )
+{
     return serializer.serialize( std::log( integerValue ) );
 }
 ```
@@ -65,7 +76,8 @@ is as if it were written:
 ```
 template< typename IntegerSerializer >
 std::string
-formatLogarithmicValue( IntegerSerializer &serializer, int integerValue ) {
+formatLogarithmicValue( IntegerSerializer &serializer, int integerValue )
+{
     return serializer.serialize( std::log( integerValue ) );
 }
 ```
@@ -85,16 +97,22 @@ of expertise expected of the audience of Concepts, viz. the non-expert programme
 might appear thus:
 
 ```
+template< typename IS >
 std::string
-formatLogarithmicValue( IntegerSerializer &serializer, int integerValue ) {
-    return std::as_const( serializer ).serialize( static_cast< int >(
-            std::log( std::as_const( integerValue ) ) ) );
+formatLogarithmicValue( IS &serializer, int integerValue )
+        requires( IntegerSerializer< IS > )
+{
+    return std::as_const( serializer ).serialize(
+            static_cast< int >( std::log( static_cast< double >( integerValue ) ) ) );
 }
 ```
 
 This does not appear to be code that would be expected of the audience targetted by Concepts.  Additionally,
 although one of the authors of this paper is author of `std::as_const`, this is not the purpose nor audience
 he had in mind when he proposed it.
+
+The primary purpose of the static casts and as-consts in this rewrite are actually dedicated to the selection
+of the correct overload, not to any specific need to have a value in the form of any specific type.
 
 An Example at Scale
 -------------------
@@ -196,11 +214,11 @@ longer the natural syntax!  This obviously defeats the intended purpose of Conce
 Some Design Philosophy
 ----------------------
 
-There are other cases where current Concepts can cause incorrect lookup.  This fails to deliver upon a big
-part of the expected benefits of this language feature.  The comparison has been drawn between C++ Virtual
-Functions and Concepts.  As Concepts are being presented to bring generic programming to the masses,
-it is vital that 3 core safety requirements be considered.  These requirements are similar to aspects
-of Object Oriented Programming.
+There are other cases where current Concepts can fail to prevent an incorrect selection of operation.
+This fails to deliver upon a big part of the expected benefits of this language feature.  The comparison has
+been drawn between C++ Virtual Functions and Concepts.  As Concepts are being presented to bring generic
+programming to the masses, it is vital that 3 core safety requirements be considered.  These requirements
+are similar to aspects of Object Oriented Programming.
 
 1. An object passed to a function must meet the qualifications that a concept describes.  This is
    analagous to how a function taking a pointer or reference to a class has the parameter checked for
@@ -356,12 +374,12 @@ __A:__ Yes.  We place no restrictions on the calling of functions in namespaces 
 __Q:__ Isn't your real problem with {ADL, const vs. non-const overloads, overload resolution, dependent lookup,
    etc.} and not with the lookup rules of Concepts today?
 
-__A:__ Absolutely not.  We have examples of unexpected lookup for each and every one of these cases.  We are
-   not convinced that our problem is with every single one of the above aspects of the language.  There
-   are some cases which will be redundantly resolved by improving those aspects of the language; however,
-   many problem cases within each of these domains still remain.  This is especially true of ADL functions.
-   ADL functions are intended to be part of the interface of a class; however, a constrained value is also
-   a constrained interface.
+__A:__ Absolutely not.  We have examples of unexpected selection of operation each and every one of
+   these cases.  We are not convinced that our problem is with every single one of the above aspects of
+   the language.  There are some cases which will be redundantly resolved by improving those aspects
+   of the language; however, many problem cases within each of these domains still remain.  This is
+   especially true of ADL functions.  ADL functions are intended to be part of the interface of a class;
+   however, a constrained value is also a constrained interface.
 
 <br>
 
@@ -421,11 +439,11 @@ Therefore, it seems a reasonable choice to make every constrained function obey 
 
 <h4> Opt-in for these rules as part of the definition of a constrained function template</h4>
 
-A user acting in good faith, trying to modernize a code base by adding constraints to existing template
-functions, may wind up causing subtle changes in the semantics and or ODR violations.  Additionally,
-the template expert is already intimately familiar with the consequences of C++'s uninituitive lookup
-rules in templates and may wish to leverage the semantics afforded by these rules in the implementation
-of his template function -- he only wishes to constrain the callers, but not himself.
+A user trying to modernize a code base by adding constraints to existing template functions, may wind
+up causing subtle changes in the semantics and or ODR violations.  Additionally, the template expert is
+already intimately familiar with the consequences of C++'s uninituitive lookup rules in templates and may
+wish to leverage the semantics afforded by these rules in the implementation of his template function --
+he only wishes to constrain the callers, but not himself.
 
 Therefore it may be necessary to control the application of this modified rule through the use of
 a signifying keyword.  We propose `explicit template< ... >` as this syntax, as it reads reasonably
