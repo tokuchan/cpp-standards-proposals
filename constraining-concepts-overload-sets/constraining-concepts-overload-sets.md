@@ -56,6 +56,8 @@ struct LoanInterestSerializer
     std::string serialize( double interestRate ) const;
 };
 
+// This is a terse-syntax style template function.  Whether the author knew he or
+// she was writing a template is not necessarily clear.
 std::string formatLogarithmicValue( IntegerSerializer &serializer, int integerValue )
 {
     return serializer.serialize( std::log( integerValue ) );
@@ -118,13 +120,19 @@ An Example at Scale
 -------------------
 
 ```
-namespace ConceptLibrary {
-    // Assume a concept, `Stringable` which requires a member function called `toString` which
-    // when called returns a string representation of the object.
+namespace ConceptLibrary
+{
+    template< typename Instance >
+    concept Stringable= requires( Instance instance, int value )
+    {
+        { std::as_const( instance ).toString() } -> std::string;
+    }
 }
 
-namespace PayrollLibrary {
-    class Employee {
+namespace PayrollLibrary
+{
+    class Employee
+    {
         private:
             std::string name;
 
@@ -134,7 +142,7 @@ namespace PayrollLibrary {
             // This satisfies the Stringable concept, and the author of this type knows that.
             std::string toString() const;
 
-            bool operator == ( const Employee &rhs ) const;
+            friend bool operator == ( const Employee &lhs, const Employee &rhs );
 
             // The following functions are friend, to indicate that ADL is intended.
 
@@ -142,27 +150,40 @@ namespace PayrollLibrary {
             friend void fire( const Employee &emp );
 
             // Initiate the specified employee's employment
-            friend void hire( Employee emp );
+            friend void hire( const Employee &emp );
 
             // Returns true if the specified employee is employed and false otherwise.
             friend bool worksHere( const Employee &emp );
     };
 }
 
-namespace AlgorithmLibrary {
-    // This "fires" off a stringable object to be processed.
-    void fire( const ConceptLibrary::Stringable &s ) {
+namespace AlgorithmLibrary
+{
+    // This "fires" off a stringable object to be processed.  It is a terse-syntax style
+    // template function.  Whether the author knew he or she was writing a template is
+    // not necessarily clear.  Although it is likely that the author knew the function
+    // was a generic function.
+    void
+    fire( const ConceptLibrary::Stringable &s )
+    {
         std::cout << "I am interested in " << s.toString() << std::endl;
     }
 
+    // This too is a terse-syntax style template function.  Whether the author knew he or
+    // she was writing a template is not necessarily clear.  Although it is likely that the
+    // author knew the function was a generic function.  The purpose of this function is
+    // to call the above helper function in a loop.
     void
-    printAll( const std::vector< ConceptLibrary::Stringable > &v ) {
+    printAll( const std::vector< ConceptLibrary::Stringable > &v )
+    {
         for( auto &&s: v ) fire( s );
     }
 }
 
-namespace UserProgram {
-    void code() {
+namespace UserProgram
+{
+    void code()
+    {
         std::vector< PayrollLibrary::Employee > team;
         team.emplace_back( "John Doe" );
         AlgorithmLibrary::printAll( team );
@@ -397,13 +418,23 @@ __A:__ ADL functions on an object which are actually part of the interface defin
 __Q:__ What about calling efficient `swap` on an `Assignable`?
 
 __A:__ This is actually a special case of the above concern.  In this case, there are at least two viable
-       options.
-   The first is to add `swap( a, b )` to the requirements of the `Assignable` concept.  The second is to
-   make `std::swap` have an overload which accepts a value which is a model of the `Swapable` concept.  An
-   unqualified call to `swap` after the traditional `using std::swap;` declaration will invoke that `Swapable`
-   overload, thus giving the correct behavior.  In addition, this has the added benefit of making any direct
-   call to `std::swap` in any context always take the best overload!  Although this library change is not
-   proposed by this paper, the authors would strongly support such a change.
+       options.  The first is to add `swap( a, b )` to the requirements of the `Assignable` concept.
+       The second is to make `std::swap` have an overload which accepts a value which is a model of
+       the `Swapable` concept.  An unqualified call to `swap` after the traditional `using std::swap;`
+       declaration will invoke that `Swapable` overload, thus giving the correct behavior.  In addition,
+       this has the added benefit of making any direct call to `std::swap` in any context always take
+       the best overload!  Although this library change is not proposed by this paper, the authors would
+       strongly support such a change.
+
+<br>
+
+__Q:__ Is this going to give me better error messages?
+
+__A:__ Although this is highly dependent upon the details of an implementation, it is possible that
+       better error messages would be possible under this proposal.  The instantiation of a template
+       which requires some specific operation which is not part of a concept should give a better error
+       message -- something along the lines of "Function not found during constraint checking."
+
 
 
 Design Considerations
@@ -476,12 +507,14 @@ Jacksonville, on 2018-03-12.  The guidance from the group was strongly positive:
 SF: 10 - F: 21 - N: 22 - A: 7 - SA: 1
 
 
-<!-- Note to us: Ask Gaby about an implementation in MSVC.  Ask Andrew Sutton about help for an impl in GCC -->
-
-
 Acknowledgements
 ----------------
 
-The authors would like to thank Allan Deutsch, Lisa Lippincott, Gabriel Dos Reis, Hal Finkel, Herb Sutter,
-and numerous others for their research, support, input, review, and guidance throughout the lifetime of this
-proposal.  Without their assistance this would not have been possible.
+The authors would like to thank Allan Deutsch, Hal Finkel, Lisa Lippincott, Gabriel Dos Reis, Herb Sutter,
+Faisal Vali, and numerous others for their research, support, input, review, and guidance throughout
+the lifetime of this proposal.  Without their assistance this would not have been possible.
+
+References
+----------
+
+FIXME: PXXXRX - The discussion paper from ABQ comparing C++20 concepts with C++17 & enable-if.
