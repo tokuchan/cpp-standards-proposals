@@ -246,10 +246,10 @@ are similar to aspects of Object Oriented Programming.
    substitutiablility.  The current Concepts proposal provides this extremely well.
 
 2. An object written to be used as a model of a concept should have its definition checked for completeness
-   by the compiler.  This is analagous to how a class is checked for abstractness vs concreteness.  The
-   current Concepts proposal lacks this; however, this is approximated very well, by the concept checking
-   machinery.  This guarantees that every class which is matched to concept provides a definition for every
-   required operation under that concept, thus satisfying the requirements of the concept.
+   by the compiler.  This is analagous to how a class is checked for abstractness vs concreteness.
+   The current Concepts proposal lacks this.  However, this is approximated very well by the concept
+   checking machinery.  This guarantees that every class which is matched to concept provides a definition
+   for every required operation under that concept, thus satisfying the requirements of the concept.
 
 3. A constrained function is only capable of calling the functions on its parameters that are described by
    its constraining Concepts.  This is analagous to how a function taking a pointer to base is only allowed
@@ -301,9 +301,9 @@ description of the overload resolution rules):
 <table border=10>
 <tr>
 <td>
-<h3>Current overload resolution
+<h3>Current overload resolution</h3>
 <td>
-<h3>Desired overload resolution
+<h3>Desired overload resolution</h3>
 <tr>
 <td valign=top>
 <p>
