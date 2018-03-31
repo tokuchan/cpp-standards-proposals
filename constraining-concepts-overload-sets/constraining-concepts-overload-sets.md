@@ -287,12 +287,15 @@ What This Paper is  _<b><u>NOT</b></u>_  Proposing
 Our Proposed Solution
 ---------------------
 
-We propose a moderate alteration of the overload resolution rules and name lookup rules that
-statically filters out some overloads based upon whether those functions are used to satisfy the
-concept's requirements.  This constrained overload set hides some functions from visibility in
-the definition of constrained functions.  No change should be necessary to the rules of name
-lookup itself; however, our new overload resolution rules will affect the results overload
-resolution on unqualified name lookup in constrained functions-- this is by design.
+We propose a moderate alteration of the overload resolution rules and name lookup rules that statically
+filters out some overloads based upon whether those functions are used to satisfy the concept's
+requirements.  This constrained overload set hides some functions from visibility in the definition of
+constrained functions.  No change should be necessary to the rules of name lookup itself; however, our
+new overload resolution rules will affect the results overload resolution on unqualified name lookup in
+constrained functions-- this is by design.  We also propose that it might be desirable to borrow a keyword
+(we suggest `explicit`) to indicate that this amended lookup rule should be followed.  Further discussion
+of the need for this keyword to enable these lookup rules will occur in a the "Design Considerations"
+section of this paper.
 
 
 Specifically, our design is to change overload resolution to be the following (taken from cppreference.com's
@@ -369,12 +372,28 @@ Objections, Questions, and Concerns
 __Q:__ Isn't this just C++0x Concepts with definition checking all over again?
 
 __A:__ No.  C++0x Concepts used mechanisms and techniques which are drastically different to the solution
-   we have proposed.  We require no generation of any adaptors, maps, or proxies.  We propose altering
-   and refining the lookup rules to further obey the restrictions imposed by Concepts in a manner similar
-   to what is already in the existing design.  We feel that this is appropriate, because Concepts already
-   requires some alteration to the lookup rules, and our design appears to be consistent with the general
-   lookup rule restrictions thereby imposed.  Concept restrictions are enforced in C++ through lookup rules,
-   not through any other mechanism.
+   we have proposed.  In the original C++0x Concepts, the compiler was required to create invisible
+   wrapping types (Concept Maps), inline shimming functions, and to calculate the set of archetype types
+   for a Concept.  C++0x Concepts were difficult to inline and relied upon the optimizer to eliminate
+   the overhead imposed by these automatically generated constructs.  C++0x concepts also provided
+   "definition checking", which had the desirable outcome that a template function could be checked for
+   correctness before instantiation.  C++0x concepts used the "Concept Map" and archetype computations
+   to decide whether a template would be correct.  This compiletime computation of an archetype runs
+   into a manifestation of the halting problem, which makes generalizing this solution to user defined
+   concepts a problematic proposition at best. 
+<br>
+<br>
+   By contrast, our solution does not involve the generation of such machinery.  We require no generation
+   of any adaptors, maps, or proxies.  Instead, we propose altering and refining the lookup rules to further
+   obey the restrictions imposed by Concepts in a manner similar to what is already in the existing design.
+   We feel that this is appropriate, because Concepts already requires some alteration to the lookup rules,
+   and our design appears to be consistent with the general lookup rule restrictions thereby imposed.
+   Concept restrictions, in their current form, are enforced in C++ through lookup rules, not through any
+   other mechanism. Our solution merely adds more rules to the set of lookup rules employed in concept
+   processing.  This also means that our solution is not capable of providing definition checking -- the
+   lookup rules that this solution alters are those which occur during the second phase of name lookup,
+   after template instantiation.
+
 
 <br>
 
@@ -512,7 +531,8 @@ We preserve the viability of overloads which are found on either branch of a dis
 a user would reasonably expect these overloads to be available if those constraints are satisfied.
 For branches of a disjunction which are not satisfied, those overloads will be unavailable, as 
 the constraint wasn't satisfied.  This seems to result in a viable overload set which most closely
-conforms to user expectations.
+conforms to user expectations.  The overall compile-time cost of this added checking should be
+proportional to the overall cost of treating a disjunction as a conjunction for this feature.
 
 Conclusion
 ----------
