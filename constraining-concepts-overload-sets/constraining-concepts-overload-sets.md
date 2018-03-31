@@ -288,14 +288,13 @@ Our Proposed Solution
 ---------------------
 
 We propose a moderate alteration of the overload resolution rules and name lookup rules that statically
-filters out some overloads based upon whether those functions are used to satisfy the concept's
-requirements.  This constrained overload set hides some functions from visibility in the definition of
-constrained functions.  No change should be necessary to the rules of name lookup itself; however, our
-new overload resolution rules will affect the results overload resolution on unqualified name lookup in
-constrained functions-- this is by design.  We also propose that it might be desirable to borrow a keyword
-(we suggest `explicit`) to indicate that this amended lookup rule should be followed.  Further discussion
-of the need for this keyword to enable these lookup rules will occur in a the "Design Considerations"
-section of this paper.
+filters out some overloads based upon whether those functions are used to satisfy the concept's requirements.
+This constrained overload set hides some functions from visibility in the definition of constrained
+functions.  No change should be necessary to the rules of name lookup itself; however, our new overload
+resolution rules will affect the results overload resolution on unqualified name lookup in constrained
+functions-- this is by design.  We also suggest that it might be desirable to borrow a keyword (we suggest
+`explicit`) to indicate that this amended lookup rule should be followed.  The need for this keyword to
+enable these lookup rules will be discussed further in the "Design Considerations" section of this paper.
 
 
 Specifically, our design is to change overload resolution to be the following (taken from cppreference.com's
@@ -373,14 +372,14 @@ __Q:__ Isn't this just C++0x Concepts with definition checking all over again?
 
 __A:__ No.  C++0x Concepts used mechanisms and techniques which are drastically different to the solution
    we have proposed.  In the original C++0x Concepts, the compiler was required to create invisible
-   wrapping types (Concept Maps), inline shimming functions, and to calculate the set of archetype types
-   for a Concept.  C++0x Concepts were difficult to inline and relied upon the optimizer to eliminate
-   the overhead imposed by these automatically generated constructs.  C++0x concepts also provided
-   "definition checking", which had the desirable outcome that a template function could be checked for
+   wrapping types (Concept Maps) and create inline shimming functions, and to calculate the set of
+   archetype types for a Concept.  C++0x Concepts were difficult to inline and relied upon the optimizer
+   to eliminate the overhead imposed by these automatically generated constructs.  C++0x concepts also
+   provided "definition checking", which was desirable in that a template function could be checked for
    correctness before instantiation.  C++0x concepts used the "Concept Map" and archetype computations
    to decide whether a template would be correct.  This compiletime computation of an archetype runs
    into a manifestation of the halting problem, which makes generalizing this solution to user defined
-   concepts a problematic proposition at best. 
+   concepts a problematic proposition at best.
 <br>
 <br>
    By contrast, our solution does not involve the generation of such machinery.  We require no generation
