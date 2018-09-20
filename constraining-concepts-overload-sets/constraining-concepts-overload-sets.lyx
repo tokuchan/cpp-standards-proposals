@@ -127,29 +127,19 @@ Introduction
 \end_layout
 
 \begin_layout Standard
-Generic programming is an incredibly useful, but difficult-to-master feature
- of the C++ language.
- One problem the novice programmer must grapple with is handling type derivation
-, and especially pruning possible type matches in a controlled fashion.
- The current Template syntax is clunky and hard-to-use.
- In an attempt to alleviate this problem, 
-\emph on
-Concepts 
-\emph default
-allow programmers to explicitly state the exact restrictions they wish to
- impose upon type derivation.
-\end_layout
-
-\begin_layout Standard
 The central purpose of Concepts is to make generic programming approachable
  for the average developer.
- In general it makes great strides towards this end particularly in the
- capacity of invoking a generic function; however, the Concepts design does
+ In general it makes great strides towards this end, particularly in the
+ capacity of invoking a generic function However, the Concepts design does
  not deliver on this promise in the implementation of a generic function.
- This is because the feature does not constrain the overload set of a template-c
-oncept function itself.
- This is contrary to the expectations of non-experts, because to them Concepts
- should strongly resemble the callable properties of an interface.
+ Perhaps surprisingly to most non-experts, this is because the feature does
+ not constrain the overload set of a template-concept function itself.
+ Most programmers would argue that Concepts should strongly resemble the
+ callable properties of an 
+\emph on
+interface
+\emph default
+.
  This mental model drives their expectations to believe that Concepts offer
  a mechanism to limit the set of operations which would be visible from
  within their constrained function to those which are specified by concept
@@ -178,18 +168,23 @@ status open
 \begin_layout Verbatim
 
 // Assume a concept, `IntegerSerializer` which requires a member function
- called `serialize` which
+ called
 \end_layout
 
 \begin_layout Verbatim
 
-// takes an `int` and returns a `std::string` with the representation of
- that integer, in the format
+// `serialize` which takes an `int` and returns a `std::string` with the
+ 
 \end_layout
 
 \begin_layout Verbatim
 
-// appropriate to the implementation.
+// representation of that integer, in the format appropriate to the implementati
+on.
+\end_layout
+
+\begin_layout Verbatim
+
 \end_layout
 
 \begin_layout Verbatim
@@ -209,7 +204,7 @@ concept IntegerSerializer= requires( Instance instance, int value )
 
 \begin_layout Verbatim
 
-{ std::as_const( instance ).serialize( value ) } -> void;
+  { std::as_const( instance ).serialize( value ) } -> void;
 \end_layout
 
 \begin_layout Verbatim
@@ -229,7 +224,7 @@ class SimpleSerializer
 
 \begin_layout Verbatim
 
-std::string serialize( int value ) const;
+  std::string serialize( int value ) const;
 \end_layout
 
 \begin_layout Verbatim
@@ -249,7 +244,7 @@ struct PrecisionSerializer
 
 \begin_layout Verbatim
 
-std::string serialize( double preciseValue ) const;
+  std::string serialize( double preciseValue ) const;
 \end_layout
 
 \begin_layout Verbatim
@@ -269,17 +264,21 @@ struct LoanInterestSerializer
 
 \begin_layout Verbatim
 
-std::string serialize( int interestBasisPoints ) const;
+  std::string serialize( int interestBasisPoints ) const;
 \end_layout
 
 \begin_layout Verbatim
 
-std::string serialize( double interestRate ) const;
+  std::string serialize( double interestRate ) const;
 \end_layout
 
 \begin_layout Verbatim
 
 };
+\end_layout
+
+\begin_layout Verbatim
+
 \end_layout
 
 \begin_layout Verbatim
@@ -295,8 +294,12 @@ std::string serialize( double interestRate ) const;
 
 \begin_layout Verbatim
 
-std::string formatLogarithmicValue( IntegerSerializer &serializer, int integerVa
-lue )
+std::string formatLogarithmicValue
+\end_layout
+
+\begin_layout Verbatim
+
+( IntegerSerializer &serializer, int integerValue )
 \end_layout
 
 \begin_layout Verbatim
@@ -306,7 +309,7 @@ lue )
 
 \begin_layout Verbatim
 
-return serializer.serialize( std::log( integerValue ) );
+  return serializer.serialize( std::log( integerValue ) );
 \end_layout
 
 \begin_layout Verbatim
@@ -329,7 +332,7 @@ formatLogarithmicValue
 \family typewriter
 SimpleSerializer
 \family default
-, then no surprises happen -- the 
+, then no surprises happen—the 
 \family typewriter
 double
 \family default
@@ -503,13 +506,13 @@ requires( IntegerSerializer< IS > )
 
 \begin_layout Plain Layout
 
-return std::as_const( serializer ).serialize(
+  return std::as_const( serializer ).serialize(
 \end_layout
 
 \begin_layout Plain Layout
 
-static_cast< int >( std::log( static_cast< double >( integerValue ) ) )
- );
+  static_cast< int >( std::log( static_cast< double >( integerValue ) )
+ ) );
 \end_layout
 
 \begin_layout Plain Layout
