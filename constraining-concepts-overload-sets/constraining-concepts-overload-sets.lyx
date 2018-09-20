@@ -1,0 +1,1674 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry true
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\use_minted 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 2cm
+\topmargin 1cm
+\rightmargin 2cm
+\bottommargin 2cm
+\headheight 1cm
+\headsep 1cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Constraining Concepts Overload Sets ISO/IEC JTC1 SC22 WG21 P0782R1
+\end_layout
+
+\begin_layout Author
+ADAM David Alan Martin
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+adam@recursive.engineer
+\end_layout
+
+\end_inset
+
+, Erich Keane
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+erich.keane@intel.com
+\end_layout
+
+\end_inset
+
+, Sean R.
+ Spillane
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+sean@spillane.us
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Introduction
+\end_layout
+
+\begin_layout Standard
+Generic programming is an incredibly useful, but difficult-to-master feature
+ of the C++ language.
+ One problem the novice programmer must grapple with is handling type derivation
+, and especially pruning possible type matches in a controlled fashion.
+ The current Template syntax is clunky and hard-to-use.
+ In an attempt to alleviate this problem, 
+\emph on
+Concepts 
+\emph default
+allow programmers to explicitly state the exact restrictions they wish to
+ impose upon type derivation.
+\end_layout
+
+\begin_layout Standard
+The central purpose of Concepts is to make generic programming approachable
+ for the average developer.
+ In general it makes great strides towards this end particularly in the
+ capacity of invoking a generic function; however, the Concepts design does
+ not deliver on this promise in the implementation of a generic function.
+ This is because the feature does not constrain the overload set of a template-c
+oncept function itself.
+ This is contrary to the expectations of non-experts, because to them Concepts
+ should strongly resemble the callable properties of an interface.
+ This mental model drives their expectations to believe that Concepts offer
+ a mechanism to limit the set of operations which would be visible from
+ within their constrained function to those which are specified by concept
+ used by the constrained function.
+\end_layout
+
+\begin_layout Standard
+The fact that this is not the case in constrained functions can lead to
+ surprising violations of the author's expectations thereof.
+ Unfortunately, this oversight cannot be corrected later.
+ To correct this later would entail silent behavioral changes to existing
+ code after the release of Concepts in a standard.
+ In other words, this is our only chance to get this right.
+\end_layout
+
+\begin_layout Section
+Simple Motivating Example
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "language={[ANSI]C++},numbers=left,breaklines=true,tabsize=2,extendedchars=true"
+inline false
+status open
+
+\begin_layout Verbatim
+
+// Assume a concept, `IntegerSerializer` which requires a member function
+ called `serialize` which
+\end_layout
+
+\begin_layout Verbatim
+
+// takes an `int` and returns a `std::string` with the representation of
+ that integer, in the format
+\end_layout
+
+\begin_layout Verbatim
+
+// appropriate to the implementation.
+\end_layout
+
+\begin_layout Verbatim
+
+template< typename Instance >
+\end_layout
+
+\begin_layout Verbatim
+
+concept IntegerSerializer= requires( Instance instance, int value )
+\end_layout
+
+\begin_layout Verbatim
+
+{
+\end_layout
+
+\begin_layout Verbatim
+
+{ std::as_const( instance ).serialize( value ) } -> void;
+\end_layout
+
+\begin_layout Verbatim
+
+}
+\end_layout
+
+\begin_layout Verbatim
+
+class SimpleSerializer
+\end_layout
+
+\begin_layout Verbatim
+
+{
+\end_layout
+
+\begin_layout Verbatim
+
+std::string serialize( int value ) const;
+\end_layout
+
+\begin_layout Verbatim
+
+};
+\end_layout
+
+\begin_layout Verbatim
+
+struct PrecisionSerializer
+\end_layout
+
+\begin_layout Verbatim
+
+{
+\end_layout
+
+\begin_layout Verbatim
+
+std::string serialize( double preciseValue ) const;
+\end_layout
+
+\begin_layout Verbatim
+
+};
+\end_layout
+
+\begin_layout Verbatim
+
+struct LoanInterestSerializer
+\end_layout
+
+\begin_layout Verbatim
+
+{
+\end_layout
+
+\begin_layout Verbatim
+
+std::string serialize( int interestBasisPoints ) const;
+\end_layout
+
+\begin_layout Verbatim
+
+std::string serialize( double interestRate ) const;
+\end_layout
+
+\begin_layout Verbatim
+
+};
+\end_layout
+
+\begin_layout Verbatim
+
+// This is a terse-syntax style template function.
+ Whether the author knew he or
+\end_layout
+
+\begin_layout Verbatim
+
+// she was writing a template is not necessarily clear.
+\end_layout
+
+\begin_layout Verbatim
+
+std::string formatLogarithmicValue( IntegerSerializer &serializer, int integerVa
+lue )
+\end_layout
+
+\begin_layout Verbatim
+
+{
+\end_layout
+
+\begin_layout Verbatim
+
+return serializer.serialize( std::log( integerValue ) );
+\end_layout
+
+\begin_layout Verbatim
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The issue is in what kind of object we pass to 
+\family typewriter
+formatLogarithmicValue
+\family default
+.
+ If we pass an 
+\family typewriter
+SimpleSerializer
+\family default
+, then no surprises happen -- the 
+\family typewriter
+double
+\family default
+ is implicitly converted to 
+\family typewriter
+int
+\family default
+.
+ If we pass 
+\family typewriter
+PrecisionSerializer
+\family default
+, then the definition of the concept will pass and an implicit conversion
+ to 
+\family typewriter
+int
+\family default
+ will happen, which is potentially surprising; however, many programmers
+ are reasonably comfortable with the idea of fundamental type conversions.
+ The most surprising case is that of 
+\family typewriter
+LoanInterestSerializer
+\family default
+.
+ 
+\family typewriter
+LoanInterestSerializer
+\family default
+ provides a 
+\family typewriter
+double
+\family default
+ and an 
+\family typewriter
+int
+\family default
+ overload.
+ Although the concept requested function with a signature that accepts an
+ 
+\family typewriter
+int
+\family default
+, the overload which accepts 
+\family typewriter
+double
+\family default
+ in its signature will be called.
+ From the perspective of the compiler, the way it will actually compile
+ the function 
+\family typewriter
+formatLogarithmicValue
+\family default
+ is as if it were written:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "language={C++},numbers=left,breaklines=true,tabsize=2"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+template< typename IntegerSerializer >
+\end_layout
+
+\begin_layout Plain Layout
+
+std::string
+\end_layout
+
+\begin_layout Plain Layout
+
+formatLogarithmicValue( IntegerSerializer &serializer, int integerValue
+ )
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+return serializer.serialize( std::log( integerValue ) );
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+At this point, the invocation of 
+\family typewriter
+IntegerSerializer::serializer
+\family default
+ will be whatever best matches 
+\family typewriter
+decltype( std::log( integerValue )) 
+\family default
+, which is the overload with 
+\family typewriter
+double
+\family default
+ as its parameter.
+ This is likely surprising behavior to the author of 
+\family typewriter
+formatLogarithmicValue
+\family default
+, as well as the caller of 
+\family typewriter
+formatLogarithmicValue
+\family default
+.
+ Both of these authors would expect that the constraints described by the
+ concept would be obeyed, yet paradoxically the overload which was not the
+ best match for the constraint was actually the overload that was actually
+ invoked in the body of the "constrained" function!
+\end_layout
+
+\begin_layout Standard
+The only way for an author of such a constrained function to avoid this,
+ at present, is to rewrite 
+\family typewriter
+formatLogarithmicValue
+\family default
+ in such a way as to prevent the incorrect lookup.
+ Unfortunately, this requires a level of C++ expertise regarding name lookup
+ and overload resolution which is at odds with the level of expertise expected
+ of the audience of Concepts, viz.
+ the non-expert programmer.
+ Such a rewrite might appear thus:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "language={C++},numbers=left,breaklines=true"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+template< typename IS >
+\end_layout
+
+\begin_layout Plain Layout
+
+std::string
+\end_layout
+
+\begin_layout Plain Layout
+
+formatLogarithmicValue( IS &serializer, int integerValue )
+\end_layout
+
+\begin_layout Plain Layout
+
+requires( IntegerSerializer< IS > )
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+return std::as_const( serializer ).serialize(
+\end_layout
+
+\begin_layout Plain Layout
+
+static_cast< int >( std::log( static_cast< double >( integerValue ) ) )
+ );
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This does not appear to be code that would be expected of the audience targetted
+ by Concepts.
+ Additionally, although one of the authors of this paper is author of 
+\family typewriter
+std::as_const
+\family default
+, this is not the purpose nor audience he had in mind when he proposed it.
+ The primary purpose of the static casts and as-consts in this rewrite are
+ actually dedicated to the selection of the correct overload, not to any
+ specific need to have a value in the form of any specific type.
+\end_layout
+
+\begin_layout Section
+An Example at Scale
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "language={C++},numbers=left,breaklines=true"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+namespace ConceptLibrary
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+template< typename Instance >
+\end_layout
+
+\begin_layout Plain Layout
+
+concept Stringable= requires( Instance instance, int value )
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+{ std::as_const( instance ).toString() } -> std::string;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+namespace PayrollLibrary
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+class Employee
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+private:
+\end_layout
+
+\begin_layout Plain Layout
+
+std::string name;
+\end_layout
+
+\begin_layout Plain Layout
+
+public:
+\end_layout
+
+\begin_layout Plain Layout
+
+Employee( std::string initialName );
+\end_layout
+
+\begin_layout Plain Layout
+
+// This satisfies the Stringable concept, and the author of this type knows
+ that.
+\end_layout
+
+\begin_layout Plain Layout
+
+std::string toString() const;
+\end_layout
+
+\begin_layout Plain Layout
+
+friend bool operator == ( const Employee &lhs, const Employee &rhs );
+\end_layout
+
+\begin_layout Plain Layout
+
+// The following functions are friend, to indicate that ADL is intended.
+\end_layout
+
+\begin_layout Plain Layout
+
+// Terminate the specified employee's employment
+\end_layout
+
+\begin_layout Plain Layout
+
+friend void fire( const Employee &emp );
+\end_layout
+
+\begin_layout Plain Layout
+
+// Initiate the specified employee's employment
+\end_layout
+
+\begin_layout Plain Layout
+
+friend void hire( const Employee &emp );
+\end_layout
+
+\begin_layout Plain Layout
+
+// Returns true if the specified employee is employed and false otherwise.
+\end_layout
+
+\begin_layout Plain Layout
+
+friend bool worksHere( const Employee &emp );
+\end_layout
+
+\begin_layout Plain Layout
+
+};
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+namespace AlgorithmLibrary
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+// This "fires" off a stringable object to be processed.
+ It is a terse-syntax style
+\end_layout
+
+\begin_layout Plain Layout
+
+// template function.
+ Whether the author knew he or she was writing a template is
+\end_layout
+
+\begin_layout Plain Layout
+
+// not necessarily clear.
+ Although it is likely that the author knew the function
+\end_layout
+
+\begin_layout Plain Layout
+
+// was a generic function.
+\end_layout
+
+\begin_layout Plain Layout
+
+void
+\end_layout
+
+\begin_layout Plain Layout
+
+fire( const ConceptLibrary::Stringable &s )
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+std::cout << "I am interested in " << s.toString() << std::endl;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+// This too is a terse-syntax style template function.
+ Whether the author knew he or
+\end_layout
+
+\begin_layout Plain Layout
+
+// she was writing a template is not necessarily clear.
+ Although it is likely that the
+\end_layout
+
+\begin_layout Plain Layout
+
+// author knew the function was a generic function.
+ The purpose of this function is
+\end_layout
+
+\begin_layout Plain Layout
+
+// to call the above helper function in a loop.
+\end_layout
+
+\begin_layout Plain Layout
+
+void
+\end_layout
+
+\begin_layout Plain Layout
+
+printAll( const std::vector< ConceptLibrary::Stringable > &v )
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+for( auto &&s: v ) fire( s );
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+namespace UserProgram
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+void code()
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+std::vector< PayrollLibrary::Employee > team;
+\end_layout
+
+\begin_layout Plain Layout
+
+team.emplace_back( "John Doe" );
+\end_layout
+
+\begin_layout Plain Layout
+
+AlgorithmLibrary::printAll( team );
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In this example the intent of the three separate authors is apparent.
+ The author of the 
+\family typewriter
+PayrollLibrary
+\family default
+ simply wished to afford his users the ability to represent employees at
+ a company.
+ The author of the 
+\family typewriter
+AlgorithmLibrary
+\family default
+ wished to afford his users the ability to print printable things and needed
+ to write an internal helper method to better organize his code.
+ The author of 
+\family typewriter
+UserProgram
+\family default
+ naievely wished to combine these reusable components for a simple task.
+ However, a subtle behavior of name lookup in function templates resulted
+ in the termination of employees, rather than the intended call to an implementa
+tion detail.
+ This happened because the name of the implementation detail happened to
+ collide with the name of some irrelevant API in the 
+\family typewriter
+Employee
+\family default
+ object being processed.
+ Recall that the author of 
+\family typewriter
+AlgorithmLibrary
+\family default
+ is likely unaware of the fact that types may exist which are 
+\family typewriter
+Stringable
+\family default
+ and yet interfere with the name he chose for his internal implementation
+ detail.
+\end_layout
+
+\begin_layout Standard
+The authors of this paper recognize the importance of respecting the original
+ intent of the programmers of these components without burying them in the
+ details of defensive template writing.
+ These kinds of examples will come up frequently and perniciously in codebases
+ which import third party libraries and work in multiple groups each with
+ different naming conventions.
+ Even without variance in naming conventions, names that have multiple meanings
+ to multiple people are likely to be used across disparate parts of a codebase,
+ and thus they are more likely to exhibit this pathological behavior.
+\end_layout
+
+\begin_layout Section
+Why it is Important to Address this Now
+\end_layout
+
+\begin_layout Standard
+Should the terse syntax be accepted into the current standard, without addressin
+g this issue, then future attempts to repair this oversight in the language
+ specification, leave us with one of two incredibly unpallateable alternatives
+ and one unsatisfying one:
+\end_layout
+
+\begin_layout Enumerate
+Make constraint violations an error, thus requiring extreme verbosity.
+\end_layout
+
+\begin_layout Enumerate
+Silently change the meaning of existing code, with ODR implications, because
+ these constrained functions are templates.
+\end_layout
+
+\begin_layout Enumerate
+Introduce a new syntax for indicating that a function definition should
+ be processed in a manner which is more consistent with average programmer
+ expectations.
+\end_layout
+
+\begin_layout Standard
+In the first case, vast amounts of code will fail to compile in noisy ways.
+ After that point, the user code would need to be rewritten, in a manner
+ similar to the necessary rewrites as described above.
+ In the second case, massive fallout from ODR, silent subtle semantic changes,
+ and other unforseen dangers lie in wait.
+ In the third case, the benefits of the "natural" syntax are lost, as the
+ best syntax for beginners is no longer the natural syntax! This obviously
+ defeats the intended purpose of Concepts with a natural syntax.
+\end_layout
+
+\begin_layout Section
+Some Design Philosophy
+\end_layout
+
+\begin_layout Standard
+There are other cases where current Concepts can fail to prevent an incorrect
+ selection of operation.
+ This fails to deliver upon a big part of the expected benefits of this
+ language feature.
+ The comparison has been drawn between C++ Virtual Functions and Concepts.
+ As Concepts are being presented to bring generic programming to the masses,
+ it is vital that 3 core safety requirements be considered.
+ These requirements are similar to aspects of Object Oriented Programming:
+\end_layout
+
+\begin_layout Enumerate
+An object passed to a function must meet the qualifications that a concept
+ describes.
+ This is analagous to how a function taking a pointer or reference to a
+ class has the parameter checked for substitutiablility.
+ The current Concepts proposal provides this extremely well.
+\end_layout
+
+\begin_layout Enumerate
+An object written to be used as a model of a concept should have its definition
+ checked for completeness by the compiler.
+ This is analagous to how a class is checked for abstractness vs concreteness.
+ The current Concepts proposal lacks this.
+ However, this is approximated very well by the concept checking machinery.
+ This guarantees that every class which is matched to concept provides a
+ definition for every required operation under that concept, thus satisfying
+ the requirements of the concept.
+\end_layout
+
+\begin_layout Enumerate
+A constrained function is only capable of calling the functions on its parameter
+s that are described by its constraining Concepts.
+ This is analagous to how a function taking a pointer to base is only allowed
+ to call members of the base -- new APIs added in any derived class are
+ not considered to be better matches, ever.
+ The current Concepts proposal lacks anything resembling this, and this
+ oversight has yet to be addressed.
+ It is this deficiency which our paper seeks to remedy.
+\end_layout
+
+\begin_layout Standard
+We propose that the Concepts feature is incomplete without constrained overload
+ set for usage, thus satisfying the third requirement of any interface-like
+ abstraction.
+ It is vital that we explore this issue.
+ We recognize that some complexity in the space of constrained generics
+ will always be present, but we feel that it is best to offload this complexity
+ to the author of a concept rather than to the implementor of a constrained
+ function.
+ This is because we believe that fewer concept authors will exist than concept
+ "users".
+\end_layout
+
+\begin_layout Standard
+Additionally, the level of expertise of a concept author is inherently higher
+ than the intended audience of constrained functions.
+ In the worst case scenario, a naive definition of a concept will merely
+ result in a few missed opportunities for more suitable overloads to handle
+ move semantics, avoid conversions, and other shenanigans
+\end_layout
+
+\begin_layout Section
+What This Paper is 
+\series bold
+\shape italic
+\color red
+NOT
+\series default
+\shape default
+\color inherit
+ Proposing
+\end_layout
+
+\begin_layout Enumerate
+Any requirement on optimizers to make any aspect of the code generated by
+ this solution more efficient
+\end_layout
+
+\begin_layout Enumerate
+Definition Checking
+\end_layout
+
+\begin_layout Enumerate
+C++0x Concept Checking
+\end_layout
+
+\begin_layout Enumerate
+C++0x Concept Maps
+\end_layout
+
+\begin_layout Enumerate
+The generation of "invisible" proxy types
+\end_layout
+
+\begin_layout Enumerate
+The generation of "invisible" inline proxy functions
+\end_layout
+
+\begin_layout Enumerate
+Dynamic dispatch
+\end_layout
+
+\begin_layout Enumerate
+Function call tables
+\end_layout
+
+\begin_layout Enumerate
+Implicit generation of adaptors
+\end_layout
+
+\begin_layout Enumerate
+Any form of extra code generation
+\end_layout
+
+\begin_layout Enumerate
+Any form of extra type generation
+\end_layout
+
+\begin_layout Section
+Our Proposed Solution
+\end_layout
+
+\begin_layout Standard
+We propose a moderate alteration of the overload resolution rules and name
+ lookup rules that statically filters out some overloads based upon whether
+ those functions are used to satisfy the concept's requirements.
+ This constrained overload set hides some functions from visibility in the
+ definition of constrained functions.
+ No change should be necessary to the rules of name lookup itself; however,
+ our new overload resolution rules will affect the results overload resolution
+ on unqualified name lookup in constrained functions-- this is by design.
+ We also suggest that it might be desirable to borrow a keyword (we suggest
+ 
+\family typewriter
+explicit
+\family default
+) to indicate that this amended lookup rule should be followed.
+ The need for this keyword to enable these lookup rules will be discussed
+ further in the "Design Considerations" section of this paper.
+ Specifically, our design is to change overload resolution to be the following
+ (taken from cppreference.com's description of the overload resolution rules):
+\end_layout
+
+\begin_layout Standard
+Given the set of candidate functions, constructed as described above, the
+ next step of overload resolution is examining arguments and parameters
+ to reduce the set to the set of viable functions To be included in the
+ set of viable functions, the candidate function must satisfy the following:
+\end_layout
+
+\begin_layout Quotation
+\begin_inset Tabular
+<lyxtabular version="3" rows="8" columns="2">
+<features booktabs="true" tabularvalignment="middle">
+<column alignment="left" valignment="top" width="45text%">
+<column alignment="left" valignment="top" width="45col%">
+<row>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Current overload resolution
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Desired overload resolution
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+If there are 
+\begin_inset Formula $M$
+\end_inset
+
+ arguments, the candidate function that has exactly 
+\begin_inset Formula $M$
+\end_inset
+
+ parameters is viable
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+If the candidate function has less than 
+\begin_inset Formula $M$
+\end_inset
+
+ parameters, but has an ellipsis parameter, it is viable.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+If the candidate function has more than 
+\begin_inset Formula $M$
+\end_inset
+
+ parameters and the 
+\begin_inset Formula $M+1$
+\end_inset
+
+'st parameter and all parameters that follow must have default arguments,
+ it is viable.
+ For the rest of overload resolution, the parameter list is truncated at
+ 
+\begin_inset Formula $M$
+\end_inset
+
+.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+If the function has an associated constraint, it must be satisfied (since
+ C++20)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\color green
+If at least one of the arguments to the function is constrained and that
+ function was found by unqualified name lookup and the lookup found a name
+ that is otherwise not visible at the calling location, then the function
+ is only viable if that function was necessary to satisfy the argument's
+ concept constraint.
+ (this paper)
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+For every argument there must be at least one implicit conversion sequence
+ that converts it to the corresponding parameter.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+If any parameter has reference type, reference binding is accounted for
+ at this step: if an rvalue argument corresponds to non-const lvalue reference
+ parameter or an lvalue argument corresponds to rvalue reference parameter,
+ the function is not viable.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Objections, Questions, and Concerns
+\end_layout
+
+\begin_layout Subsection
+Isn't this just C++0x Concepts with definition checking all over again?
+ 
+\end_layout
+
+\begin_layout Standard
+No.
+ C++0x Concepts used mechanisms and techniques which are drastically different
+ to the solution we have proposed.
+ In the original C++0x Concepts, the compiler was required to create invisible
+ wrapping types (Concept Maps) and create inline shimming functions, and
+ to calculate the set of archetype types for a Concept.
+ C++0x Concepts were difficult to inline and relied upon the optimizer to
+ eliminate the overhead imposed by these automatically generated constructs.
+ C++0x concepts also provided "definition checking", which was desirable
+ in that a template function could be checked for correctness before instantiati
+on.
+ C++0x concepts used the "Concept Map" and archetype computations to decide
+ whether a template would be correct.
+ This compiletime computation of an archetype runs into a manifestation
+ of the halting problem, which makes generalizing this solution to user
+ defined concepts a problematic proposition at best.
+\begin_inset Newline newline
+\end_inset
+
+By contrast, our solution does not involve the generation of such machinery.
+ We require no generation of any adaptors, maps, or proxies.
+ Instead, we propose altering and refining the lookup rules to further obey
+ the restrictions imposed by Concepts in a manner similar to what is already
+ in the existing design.
+ We feel that this is appropriate, because Concepts already requires some
+ alteration to the lookup rules, and our design appears to be consistent
+ with the general lookup rule restrictions thereby imposed.
+ Concept restrictions, in their current form, are enforced in C++ through
+ lookup rules, not through any other mechanism.
+ Our solution merely adds more rules to the set of lookup rules employed
+ in concept processing.
+ This also means that our solution is not capable of providing definition
+ checking -- the lookup rules that this solution alters are those which
+ occur during the second phase of name lookup, after template instantiation.
+\end_layout
+
+\begin_layout Subsection
+Will I be able to call internal helper functions to my constrained function
+ using an unqualified name? 
+\end_layout
+
+\begin_layout Standard
+Yes.
+ We place no restrictions on the calling of functions in namespaces that
+ are unrelated to the concept used in a constraint.
+ The namespaces associated with the types that are constrained are also
+ still searched, but only the names which are necessary (in some fashion)
+ to meet the requirements of the concept are considered to be viable.
+ In some sense this is the existing Concepts restriction on calling a constraine
+d function applied in reverse -- constraints restrict which functions are
+ called based upon their arguments.
+ The current restriction prevents calling a function which is not prepared
+ to accept a type.
+ Our refinement prevents calling a function which is not presented as part
+ of the requirements on a type.
+ This example is illustrated in our "at scale" example, and it is one of
+ our primary motivations.
+\end_layout
+
+\begin_layout Subsection
+Isn't your real problem with {ADL, const vs.
+ non-const overloads, overload resolution, dependent lookup, etc.} and not
+ with the lookup rules of Concepts today?
+\end_layout
+
+\begin_layout Standard
+Absolutely not.
+ We have examples of unexpected selection of operation each and every one
+ of these cases.
+ We are not convinced that our problem is with every single one of the above
+ aspects of the language.
+ There are some cases which will be redundantly resolved by improving those
+ aspects of the language; however, many problem cases within each of these
+ domains still remain.
+ This is especially true of ADL functions.
+ ADL functions are intended to be part of the interface of a class; however,
+ a constrained value is also a constrained interface.
+\end_layout
+
+\begin_layout Subsection
+How do I actually invoke ADL functions that I want invoked in my constrained
+ functions?
+\end_layout
+
+\begin_layout Standard
+ADL functions on an object which are actually part of the interface defined
+ by the concept that constrains the calling function are still preserved
+ as part of the viable overload set.
+ This makes them likely to be the best match for an unqualified call, unless
+ a more specific overload is available in some other reachable namespace.
+ If you wish to call ADL functions which are not part of the constraint,
+ then one always has two viable options.
+ The first is to use a direct "using std::foobar" approach, and the second
+ is to adjust the definition of a Concept to include this ADL operation.
+\end_layout
+
+\begin_layout Subsection
+What about calling efficient `swap` on an `Assignable`?
+\end_layout
+
+\begin_layout Standard
+This is actually a special case of the above concern.
+ In this case, there are at least two viable options.
+ The first is to add 
+\family typewriter
+swap( a, b )
+\family default
+ to the requirements of the 
+\family typewriter
+Assignable
+\family default
+ concept.
+ The second is to make 
+\family typewriter
+std::swap
+\family default
+ have an overload which accepts a value which is a model of the 
+\family typewriter
+Swapable
+\family default
+ concept.
+ An unqualified call to 
+\family typewriter
+swap
+\family default
+ after the traditional 
+\family typewriter
+using std::swap;
+\family default
+ declaration will invoke that 
+\family typewriter
+Swapable
+\family default
+ overload, thus giving the correct behavior.
+ In addition, this has the added benefit of making any direct call to 
+\family typewriter
+std::swap
+\family default
+ in any context always take the best overload! Although this library change
+ is not proposed by this paper, the authors would strongly support such
+ a change.
+\end_layout
+
+\begin_layout Subsection
+Is this going to give me better error messages?
+\end_layout
+
+\begin_layout Standard
+Although this is highly dependent upon the details of an implementation,
+ it is possible that better error messages would be possible under this
+ proposal.
+ The instantiation of a template which requires some specific operation
+ which is not part of a concept should give a better error message---something
+ along the lines of "Function not found during constraint checking."
+\end_layout
+
+\begin_layout Subsection
+What about implicit conversions needed in ?
+\end_layout
+
+\begin_layout Standard
+Because the function selected by overload resolution must be part of the
+ operations necessary to satisfy the constraints of the specified concept,
+ all implicit conversions which are necessary to invoke that function are
+ also part of the operations necessary to satisfy that concept.
+ This means that any set of implicit conversions provided by a type which
+ are necessary to invoke a selected overload should be "whitelisted" for
+ use in constrained functions when calling that overload.
+\end_layout
+
+\begin_layout Subsection
+Will I be able to invoke arbitrary operations on my constrained parameters
+ which are not part of the concept?
+\end_layout
+
+\begin_layout Standard
+Any function which is available directly in the namespace (directly or via
+ a 
+\family typewriter
+using
+\family default
+ statement) of a constrained function may be called.
+ Any function which is a template but is not constrained will be called
+ as an unconstrained function.
+ In that context of an unconstrained template, any function may be invoked
+ as normal.
+ We also propose that an intrinsic cast-like operation could be added which
+ will revert a constrained variable to an unconstrained variable, to permit
+ calling functions in an unconstrained fashion for various purposes.
+\end_layout
+
+\begin_layout Section
+Design Considerations
+\end_layout
+
+\begin_layout Standard
+Any design that proposes to change lookup rules should not invalidate code
+ written under those rules today.
+ Because of this, we do not propose that the lookup rules should be changed
+ when evaluating names within a "classical" template context.
+ However, we see a number of opportunities to apply our modified lookup
+ scheme:
+\end_layout
+
+\begin_layout Subsection
+Terse syntax constrained functions
+\end_layout
+
+\begin_layout Standard
+The terse syntax intends to open generic programming to a wider audience,
+ as discussed earlier.
+ We feel that it is obvious that such terse syntax functions be subject
+ to rules which provide a more intuitive result.
+ Therefore we suggest that any terse syntax considered by the committee
+ must havethe intuitive semantics provided by our proposal.
+\end_layout
+
+\begin_layout Subsection
+Template syntax constrained function
+\end_layout
+
+\begin_layout Subsubsection
+All constrained function templates
+\end_layout
+
+\begin_layout Standard
+Any expansion of a terse syntax from the terse form into a "canonical" productio
+n of a constrained template function declaration could automatically have
+ these rules applied.
+ This seems fairly obvious in many respects, because the purpose of Concepts
+ is to afford better selection of applicable functions in name lookup and
+ overload resolution.
+ When a user writes a constrained function, even using template syntax,
+ he or she is explicitly choosing to have the semantics of Concepts applied
+ to their function.
+ Therefore, it seems a reasonable choice to make every constrained function
+ obey these lookup rules.
+\end_layout
+
+\begin_layout Subsubsection
+Opt-in for these rules as part of the definition of a constrained function
+ template
+\end_layout
+
+\begin_layout Standard
+A user trying to modernize a code base by adding constraints to existing
+ template functions, may wind up causing subtle changes in the semantics
+ and or ODR violations.
+ Additionally, the template expert is already intimately familiar with the
+ consequences of C++'s uninituitive lookup rules in templates and may wish
+ to leverage the semantics afforded by these rules in the implementation
+ of his template function—he only wishes to constrain the callers, but not
+ himself.
+ Therefore it may be necessary to control the application of this modified
+ rule through the use of a signifying keyword.
+ We propose 
+\family typewriter
+explicit template< ...
+ >
+\family default
+ as this syntax, as it reads reasonably well and clearly indicates intent.
+ Although this proposed syntax uses the 
+\family typewriter
+template
+\family default
+ keyword, which is already indicitive of potential lookup dangers, it eschews
+ the pitfalls for the 
+\family typewriter
+template< ...
+ >
+\family default
+ case.
+\end_layout
+
+\begin_layout Standard
+Regardless of whether the new lookup rules are opt-in or opt-out, the language
+ loses no expressivity.
+ It is possible to choose the opposite alternative through other syntax.
+\end_layout
+
+\begin_layout Subsection
+Behavior of These Rules Under Short Circuit of Disjunction
+\end_layout
+
+\begin_layout Standard
+We preserve the viability of overloads which are found on either branch
+ of a disjunction, because a user would reasonably expect these overloads
+ to be available if those constraints are satisfied.
+ For branches of a disjunction which are not satisfied, those overloads
+ will be unavailable, as the constraint wasn't satisfied.
+ This seems to result in a viable overload set which most closely conforms
+ to user expectations.
+ The overall compile-time cost of this added checking should be proportional
+ to the overall cost of treating a disjunction as a conjunction for this
+ feature.
+\end_layout
+
+\begin_layout Section
+Conclusion
+\end_layout
+
+\begin_layout Standard
+In P0726R0 it was asked if Concepts improve upon the expressivity of C++17.
+ The response from EWG was mixed.
+ The fact is that, although Concepts are more approachable and readable
+ than C++17 
+\family typewriter
+std::enable_if
+\family default
+ predicates, they do not provide any new expressivity to the language, nor
+ do they provide any facility for making templates actually easier to write.
+ We feel that this proposal's adoption will give a new dimension to the
+ Concepts feature which will enable the simple expression of C++ generic
+ code in a much safer and more readable style than C++17 or the current
+ Concepts design.
+\end_layout
+
+\begin_layout Section
+Revision History
+\end_layout
+
+\begin_layout Standard
+P0782R0 - A Case for Simplifying/Improving Natural Syntax Concepts (Erich
+ Keane, A.D.A.
+ Martin, Allan Deutsch) The original draft explained the general problem
+ with a simple example.
+ The motivation was to help attain a better consensus for "Natural Syntax"
+ Concepts.
+ It was presented in the Monday Evening session of EWG at Jacksonville,
+ on 2018-03-12.
+ The guidance from the group was strongly positive:
+\end_layout
+
+\begin_layout Standard
+SF: 10 - F: 21 - N: 22 - A: 7 - SA: 1
+\end_layout
+
+\begin_layout Section
+Acknowledgements
+\end_layout
+
+\begin_layout Standard
+The authors would like to thank Allan Deutsch, Hal Finkel, Lisa Lippincott,
+ Gabriel Dos Reis, Herb Sutter, Faisal Vali, and numerous others for their
+ research, support, input, review, and guidance throughout the lifetime
+ of this proposal.
+ Without their assistance this would not have been possible.
+\end_layout
+
+\begin_layout Section
+References
+\end_layout
+
+\begin_layout Standard
+P0726R0 - "Does Concepts Improve on C++17?"
+\end_layout
+
+\end_body
+\end_document
