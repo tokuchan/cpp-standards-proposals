@@ -253,8 +253,7 @@ Simple Motivating Example
 \end_layout
 
 \begin_layout Standard
-Let us illustrate the problem with a simple example of how programmers can
- be unpleasantly surprised by current behavior.
+Let us illustrate the main problem with a simple example.
  We assume that a Concept, which we dub 
 \family typewriter
 IntegerSerializer
@@ -688,306 +687,63 @@ An Example at Scale
 \end_layout
 
 \begin_layout Standard
+Let us now consider a more complete example.
+ First, we define the 
+\family typewriter
+Show
+\family default
+ Concept.
+ This Concept specifies a single required function:
+\end_layout
+
+\begin_layout Standard
 \begin_inset listings
-lstparams "language={C++},numbers=left,breaklines=true"
+lstparams "language={C++},numbers=left,breaklines=true,tabsize=2,extendedchars=true,frame=tb,captionpos=b"
 inline false
 status open
 
 \begin_layout Plain Layout
 
-namespace ConceptLibrary
+namespace ConceptLibrary {
 \end_layout
 
 \begin_layout Plain Layout
 
-{
+	template< typename Instance >
 \end_layout
 
 \begin_layout Plain Layout
 
-template< typename Instance >
+	concept Show = requires( Instance instance, int value ) {
 \end_layout
 
 \begin_layout Plain Layout
 
-concept Stringable= requires( Instance instance, int value )
+		{ std::as_const( instance ).toString() } -> std::string;
 \end_layout
 
 \begin_layout Plain Layout
 
-{
-\end_layout
-
-\begin_layout Plain Layout
-
-{ std::as_const( instance ).toString() } -> std::string;
+	}
 \end_layout
 
 \begin_layout Plain Layout
 
 }
-\end_layout
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 
-}
+The 
+\family typewriter
+Show
+\family default
+ Concept.
 \end_layout
 
-\begin_layout Plain Layout
+\end_inset
 
-namespace PayrollLibrary
-\end_layout
 
-\begin_layout Plain Layout
-
-{
-\end_layout
-
-\begin_layout Plain Layout
-
-class Employee
-\end_layout
-
-\begin_layout Plain Layout
-
-{
-\end_layout
-
-\begin_layout Plain Layout
-
-private:
-\end_layout
-
-\begin_layout Plain Layout
-
-std::string name;
-\end_layout
-
-\begin_layout Plain Layout
-
-public:
-\end_layout
-
-\begin_layout Plain Layout
-
-Employee( std::string initialName );
-\end_layout
-
-\begin_layout Plain Layout
-
-// This satisfies the Stringable concept, and the author of this type knows
- that.
-\end_layout
-
-\begin_layout Plain Layout
-
-std::string toString() const;
-\end_layout
-
-\begin_layout Plain Layout
-
-friend bool operator == ( const Employee &lhs, const Employee &rhs );
-\end_layout
-
-\begin_layout Plain Layout
-
-// The following functions are friend, to indicate that ADL is intended.
-\end_layout
-
-\begin_layout Plain Layout
-
-// Terminate the specified employee's employment
-\end_layout
-
-\begin_layout Plain Layout
-
-friend void fire( const Employee &emp );
-\end_layout
-
-\begin_layout Plain Layout
-
-// Initiate the specified employee's employment
-\end_layout
-
-\begin_layout Plain Layout
-
-friend void hire( const Employee &emp );
-\end_layout
-
-\begin_layout Plain Layout
-
-// Returns true if the specified employee is employed and false otherwise.
-\end_layout
-
-\begin_layout Plain Layout
-
-friend bool worksHere( const Employee &emp );
-\end_layout
-
-\begin_layout Plain Layout
-
-};
-\end_layout
-
-\begin_layout Plain Layout
-
-}
-\end_layout
-
-\begin_layout Plain Layout
-
-namespace AlgorithmLibrary
-\end_layout
-
-\begin_layout Plain Layout
-
-{
-\end_layout
-
-\begin_layout Plain Layout
-
-// This "fires" off a stringable object to be processed.
- It is a terse-syntax style
-\end_layout
-
-\begin_layout Plain Layout
-
-// template function.
- Whether the author knew he or she was writing a template is
-\end_layout
-
-\begin_layout Plain Layout
-
-// not necessarily clear.
- Although it is likely that the author knew the function
-\end_layout
-
-\begin_layout Plain Layout
-
-// was a generic function.
-\end_layout
-
-\begin_layout Plain Layout
-
-void
-\end_layout
-
-\begin_layout Plain Layout
-
-fire( const ConceptLibrary::Stringable &s )
-\end_layout
-
-\begin_layout Plain Layout
-
-{
-\end_layout
-
-\begin_layout Plain Layout
-
-std::cout << "I am interested in " << s.toString() << std::endl;
-\end_layout
-
-\begin_layout Plain Layout
-
-}
-\end_layout
-
-\begin_layout Plain Layout
-
-// This too is a terse-syntax style template function.
- Whether the author knew he or
-\end_layout
-
-\begin_layout Plain Layout
-
-// she was writing a template is not necessarily clear.
- Although it is likely that the
-\end_layout
-
-\begin_layout Plain Layout
-
-// author knew the function was a generic function.
- The purpose of this function is
-\end_layout
-
-\begin_layout Plain Layout
-
-// to call the above helper function in a loop.
-\end_layout
-
-\begin_layout Plain Layout
-
-void
-\end_layout
-
-\begin_layout Plain Layout
-
-printAll( const std::vector< ConceptLibrary::Stringable > &v )
-\end_layout
-
-\begin_layout Plain Layout
-
-{
-\end_layout
-
-\begin_layout Plain Layout
-
-for( auto &&s: v ) fire( s );
-\end_layout
-
-\begin_layout Plain Layout
-
-}
-\end_layout
-
-\begin_layout Plain Layout
-
-}
-\end_layout
-
-\begin_layout Plain Layout
-
-namespace UserProgram
-\end_layout
-
-\begin_layout Plain Layout
-
-{
-\end_layout
-
-\begin_layout Plain Layout
-
-void code()
-\end_layout
-
-\begin_layout Plain Layout
-
-{
-\end_layout
-
-\begin_layout Plain Layout
-
-std::vector< PayrollLibrary::Employee > team;
-\end_layout
-
-\begin_layout Plain Layout
-
-team.emplace_back( "John Doe" );
-\end_layout
-
-\begin_layout Plain Layout
-
-AlgorithmLibrary::printAll( team );
-\end_layout
-
-\begin_layout Plain Layout
-
-}
-\end_layout
-
-\begin_layout Plain Layout
-
-}
 \end_layout
 
 \end_inset
@@ -996,13 +752,386 @@ AlgorithmLibrary::printAll( team );
 \end_layout
 
 \begin_layout Standard
-In this example the intent of the three separate authors is apparent.
+Next, we sketch out an 
+\family typewriter
+Employee
+\family default
+ class, which will implement the 
+\family typewriter
+Show
+\family default
+ Concept.
+ Note please that the intent of the 
+\family typewriter
+fire
+\family default
+ function is to 
+\emph on
+terminate
+\emph default
+ an 
+\family typewriter
+Employee
+\family default
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "language={C++},numbers=left,breaklines=true,tabsize=2,extendedchars=true,frame=tb,captionpos=b"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+namespace ConceptLibrary::PayrollLibrary {
+\end_layout
+
+\begin_layout Plain Layout
+
+	class Employee {
+\end_layout
+
+\begin_layout Plain Layout
+
+		private:
+\end_layout
+
+\begin_layout Plain Layout
+
+		std::string name;
+\end_layout
+
+\begin_layout Plain Layout
+
+		public:
+\end_layout
+
+\begin_layout Plain Layout
+
+		Employee( std::string initialName );
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+		// This satisfies the Show Concept, and the author of this type
+\end_layout
+
+\begin_layout Plain Layout
+
+		// knows that.
+\end_layout
+
+\begin_layout Plain Layout
+
+		std::string toString() const;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+		// The following functions are friend, to indicate that ADL is
+\end_layout
+
+\begin_layout Plain Layout
+
+		// intended.
+\end_layout
+
+\begin_layout Plain Layout
+
+		friend bool operator == 
+\end_layout
+
+\begin_layout Plain Layout
+
+			( const Employee &lhs
+\end_layout
+
+\begin_layout Plain Layout
+
+			, const Employee &rhs );
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+		// Fire the specified Employee
+\end_layout
+
+\begin_layout Plain Layout
+
+		friend void fire( const Employee &emp );
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+		// Hire the specified Employee
+\end_layout
+
+\begin_layout Plain Layout
+
+		friend hire ( const Employee &emp );
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+		// Return true only if the specified Employee is hired
+\end_layout
+
+\begin_layout Plain Layout
+
+		friend bool worksHere ( const Employee &emp );
+\end_layout
+
+\begin_layout Plain Layout
+
+	};
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+\family typewriter
+Employee
+\family default
+ implementation of the 
+\family typewriter
+Show
+\family default
+ Concept.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Now, we will sketch out a simple algorithm library.
+ Note please that there is a 
+\family typewriter
+fire
+\family default
+ function defined here too.
+ It is clearly intended to 
+\begin_inset Quotes eld
+\end_inset
+
+fire
+\begin_inset Quotes erd
+\end_inset
+
+ off 
+\family typewriter
+Show
+\family default
+able objects:
+\begin_inset listings
+lstparams "language={C++},numbers=left,breaklines=true,tabsize=2,extendedchars=true,frame=tb,captionpos=b"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+namespace ConceptLibrary::AlgorithmLibrary {
+\end_layout
+
+\begin_layout Plain Layout
+
+	// This 
+\begin_inset Quotes eld
+\end_inset
+
+fires
+\begin_inset Quotes erd
+\end_inset
+
+ off a Showable object to be processed.
+\end_layout
+
+\begin_layout Plain Layout
+
+	void fire( const ConceptLibrary::Show &s ) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		std::cout << 
+\begin_inset Quotes eld
+\end_inset
+
+I am intested in 
+\begin_inset Quotes eld
+\end_inset
+
+ << s.toString() << std::endl;
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	// This is intended to call the fire function, defined above.
+\end_layout
+
+\begin_layout Plain Layout
+
+	void printAll( std::vector< ConceptLibrary::Show > &v ) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		for ( auto &&s : v ) fire( s );
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+\family typewriter
+Algorithm
+\family default
+ library that uses 
+\family typewriter
+Show
+\family default
+able objects.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We should note that neither function defined above makes it obvious that
+ it is in fact a template generic function.
+ This is because this code makes use of the terse-syntax.
+ It is likely that the author would know, at some level, that they were
+ defining a generic function.
+\end_layout
+
+\begin_layout Standard
+Finally, let us sketch out a driver program that exploits our previously-defined
+ libraries:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "language={C++},numbers=left,breaklines=true,tabsize=2,extendedchars=true,frame=tb,captionpos=b"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+namespace UserProgram {
+\end_layout
+
+\begin_layout Plain Layout
+
+	void code() {
+\end_layout
+
+\begin_layout Plain Layout
+
+		std::vector< PayrollLibrary::Employee > team;
+\end_layout
+
+\begin_layout Plain Layout
+
+		team.emplace_back( "John Doe" );
+\end_layout
+
+\begin_layout Plain Layout
+
+		AlgorithmLibrary::printAll( team );
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Example driver program.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+It should be quite obvious what each of the authors of the code segments
+ above intended.
  The author of the 
 \family typewriter
 PayrollLibrary
 \family default
- simply wished to afford his users the ability to represent employees at
- a company.
+ wanted to represent 
+\family typewriter
+Employee
+\family default
+s at a company.
  The author of the 
 \family typewriter
 AlgorithmLibrary
@@ -1013,12 +1142,32 @@ AlgorithmLibrary
 \family typewriter
 UserProgram
 \family default
- naievely wished to combine these reusable components for a simple task.
- However, a subtle behavior of name lookup in function templates resulted
- in the termination of employees, rather than the intended call to an implementa
-tion detail.
- This happened because the name of the implementation detail happened to
- collide with the name of some irrelevant API in the 
+ wanted to combine these reusable components for a simple task.
+ 
+\end_layout
+
+\begin_layout Standard
+Unfortunately for these developers, a subtle behavior of name lookup in
+ function templates resulted in the termination of employees, rather than
+ the intended call to an implementation detail! This happened because both
+ the 
+\family typewriter
+Employee
+\family default
+ class and the 
+\family typewriter
+AlgorithmLibrary
+\family default
+ chose to name a function 
+\family typewriter
+fire
+\family default
+.
+ The implementation detail in 
+\family typewriter
+AlgorithmLibrary
+\family default
+ happened to collide with the name of some API function in the 
 \family typewriter
 Employee
 \family default
@@ -1027,11 +1176,11 @@ Employee
 \family typewriter
 AlgorithmLibrary
 \family default
- is likely unaware of the fact that types may exist which are 
+ is very likely unaware of the fact that types may exist which are 
 \family typewriter
-Stringable
+Show
 \family default
- and yet interfere with the name he chose for his internal implementation
+able and yet interfere with the name he chose for his internal implementation
  detail.
 \end_layout
 
