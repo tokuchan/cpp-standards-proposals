@@ -127,30 +127,68 @@ Introduction
 \end_layout
 
 \begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+The language is a bit stiff and seems to make heavy use of the passive voice.
+ I would recommend changing to the active voice and selecting slightly cheaper
+ words.
+ I've gone ahead and done so for the introduction, at least a bit.
+\end_layout
+
+\end_inset
+
 The central purpose of Concepts is to make generic programming approachable
  for the average developer.
  In general it makes great strides towards this end, particularly in the
  capacity of invoking a generic function However, the Concepts design does
  not deliver on this promise in the implementation of a generic function.
- Perhaps surprisingly to most non-experts, this is because the feature does
- not constrain the overload set of a template-concept function itself.
- Most programmers would argue that Concepts should strongly resemble the
+ Perhaps surprisingly to the average developer, this is because the feature
+ does not constrain the overload set of a template-concept function itself.
+ 
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+This next sentence is what I'm interpreting the previous one to say.
+ Is it correct?
+\end_layout
+
+\end_inset
+
+That is, while the selection of conventional functions available to call
+ is correctly constrained by the Concepts employed in the caller, 
+\emph on
+function templates
+\emph default
+ are not.
+ 
+\end_layout
+
+\begin_layout Standard
+Most programmers would argue that Concepts should strongly resemble the
  callable properties of an 
 \emph on
 interface
 \emph default
 .
- This mental model drives their expectations to believe that Concepts offer
- a mechanism to limit the set of operations which would be visible from
- within their constrained function to those which are specified by concept
- used by the constrained function.
+ That is, a Concept specifies a collection of declared function types, and
+ only those types can be invoked on any particular instance of the Concept.
+ This mental model drives their expectations to believe that Concepts should
+ offer a mechanism to limit the set of operations which would be visible
+ from within their constrained function to those which are specified by
+ concepts used by the constrained function.
 \end_layout
 
 \begin_layout Standard
 The fact that this is not the case in constrained functions can lead to
  surprising violations of the author's expectations thereof.
  Unfortunately, this oversight cannot be corrected later.
- To correct this later would entail silent behavioral changes to existing
+ To do so would entail making silent behavioral changes to 
+\emph on
+existing
+\emph default
  code after the release of Concepts in a standard.
  In other words, this is our only chance to get this right.
 \end_layout
@@ -160,159 +198,210 @@ Simple Motivating Example
 \end_layout
 
 \begin_layout Standard
+Let us illustrate the problem with a simple example of how programmers can
+ be unpleasantly surprised by current behavior.
+ We assume that a Concept, which we dub 
+\family typewriter
+IntegerSerializer
+\family default
+, describes the following interface:
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+Stupid question: shouldn't the return of serialize be string, and not void?
+ Also, I note a problem with this concept, as written.
+ You appear to plan to show overload selection failure by passing in doubles
+ to value, and taking advantage of implicit conversion.
+ Unfortunately, the Concept implementations appear to be inconsistent.
+ A PrecisionSerializer expects a double, which violates the Concept definition.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "language={C++},numbers=left,basicstyle={\small},breaklines=true"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+template< typename Instance >
+\end_layout
+
+\begin_layout Plain Layout
+
+concept IntegerSerializer= requires( Instance instance, int value )
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+  // This function member takes an int to a std::string, such that
+\end_layout
+
+\begin_layout Plain Layout
+
+  // the string is a suitable representation of the int.
+\end_layout
+
+\begin_layout Plain Layout
+
+  { std::as_const( instance ).serialize( value ) } -> std::string;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Now, we can define several instances of this Concept, for various desired
+ formats:
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+Doesn't PrecisionSerializer violate the Concept? The concept requires that
+ serialize take an int, yet PrecisionSerializer declares a double.
+ I'm confused here.
+ My understanding is, whatever implements the Concept must correctly implement
+ the interface.
+ What the body of that implementation does is up for grabs.
+ Does that make sense? If you want to be able to take ints or doubles, then
+ you should declare a Number concept, which generalizes the Concept of numbers,
+ and make NumberSerializer take an instance of a Number.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+class SimpleSerializer
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+  std::string serialize( int value ) const;
+\end_layout
+
+\begin_layout Plain Layout
+
+};
+\end_layout
+
+\begin_layout Plain Layout
+
+struct PrecisionSerializer
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+  std::string serialize( double preciseValue ) const; // Should fail to
+ compile, since serialize expects int
+\end_layout
+
+\begin_layout Plain Layout
+
+};
+\end_layout
+
+\begin_layout Plain Layout
+
+struct LoanInterestSerializer
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+  std::string serialize( int interestBasisPoints ) const;
+\end_layout
+
+\begin_layout Plain Layout
+
+  std::string serialize( double interestRate ) const; // Should fail to
+ compile, since serialize expects int
+\end_layout
+
+\begin_layout Plain Layout
+
+};
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Finally, we can attempt to use the concept in some code.
+ It should be noted that this code—written using the terse-syntax style—makes
+ it unclear whether the author knew they were writing a template:
+\end_layout
+
+\begin_layout Standard
 \begin_inset listings
 lstparams "language={[ANSI]C++},numbers=left,breaklines=true,tabsize=2,extendedchars=true"
 inline false
 status open
 
-\begin_layout Verbatim
+\begin_layout Plain Layout
 
-// Assume a concept, `IntegerSerializer` which requires a member function
- called
+std::string 
 \end_layout
 
-\begin_layout Verbatim
+\begin_layout Plain Layout
 
-// `serialize` which takes an `int` and returns a `std::string` with the
- 
+formatLogarithmicValue( IntegerSerializer &serializer, int integerValue
+ )
 \end_layout
 
-\begin_layout Verbatim
-
-// representation of that integer, in the format appropriate to the implementati
-on.
-\end_layout
-
-\begin_layout Verbatim
-
-\end_layout
-
-\begin_layout Verbatim
-
-template< typename Instance >
-\end_layout
-
-\begin_layout Verbatim
-
-concept IntegerSerializer= requires( Instance instance, int value )
-\end_layout
-
-\begin_layout Verbatim
+\begin_layout Plain Layout
 
 {
 \end_layout
 
-\begin_layout Verbatim
-
-  { std::as_const( instance ).serialize( value ) } -> void;
-\end_layout
-
-\begin_layout Verbatim
-
-}
-\end_layout
-
-\begin_layout Verbatim
-
-class SimpleSerializer
-\end_layout
-
-\begin_layout Verbatim
-
-{
-\end_layout
-
-\begin_layout Verbatim
-
-  std::string serialize( int value ) const;
-\end_layout
-
-\begin_layout Verbatim
-
-};
-\end_layout
-
-\begin_layout Verbatim
-
-struct PrecisionSerializer
-\end_layout
-
-\begin_layout Verbatim
-
-{
-\end_layout
-
-\begin_layout Verbatim
-
-  std::string serialize( double preciseValue ) const;
-\end_layout
-
-\begin_layout Verbatim
-
-};
-\end_layout
-
-\begin_layout Verbatim
-
-struct LoanInterestSerializer
-\end_layout
-
-\begin_layout Verbatim
-
-{
-\end_layout
-
-\begin_layout Verbatim
-
-  std::string serialize( int interestBasisPoints ) const;
-\end_layout
-
-\begin_layout Verbatim
-
-  std::string serialize( double interestRate ) const;
-\end_layout
-
-\begin_layout Verbatim
-
-};
-\end_layout
-
-\begin_layout Verbatim
-
-\end_layout
-
-\begin_layout Verbatim
-
-// This is a terse-syntax style template function.
- Whether the author knew he or
-\end_layout
-
-\begin_layout Verbatim
-
-// she was writing a template is not necessarily clear.
-\end_layout
-
-\begin_layout Verbatim
-
-std::string formatLogarithmicValue
-\end_layout
-
-\begin_layout Verbatim
-
-( IntegerSerializer &serializer, int integerValue )
-\end_layout
-
-\begin_layout Verbatim
-
-{
-\end_layout
-
-\begin_layout Verbatim
+\begin_layout Plain Layout
 
   return serializer.serialize( std::log( integerValue ) );
 \end_layout
 
-\begin_layout Verbatim
+\begin_layout Plain Layout
 
 }
 \end_layout
@@ -328,7 +417,7 @@ The issue is in what kind of object we pass to
 formatLogarithmicValue
 \family default
 .
- If we pass an 
+ If we pass a 
 \family typewriter
 SimpleSerializer
 \family default
@@ -341,7 +430,7 @@ double
 int
 \family default
 .
- If we pass 
+ If we pass a 
 \family typewriter
 PrecisionSerializer
 \family default
@@ -350,8 +439,9 @@ PrecisionSerializer
 \family typewriter
 int
 \family default
- will happen, which is potentially surprising; however, many programmers
- are reasonably comfortable with the idea of fundamental type conversions.
+ will happen, which is potentially surprising.
+ However, many programmers are reasonably comfortable with the idea of fundament
+al type conversions.
  The most surprising case is that of 
 \family typewriter
 LoanInterestSerializer
@@ -370,8 +460,8 @@ double
 int
 \family default
  overload.
- Although the concept requested function with a signature that accepts an
- 
+ Although the concept requested a function with a signature that accepts
+ an 
 \family typewriter
 int
 \family default
@@ -379,7 +469,7 @@ int
 \family typewriter
 double
 \family default
- in its signature will be called.
+ in its signature will be called instead.
  From the perspective of the compiler, the way it will actually compile
  the function 
 \family typewriter
