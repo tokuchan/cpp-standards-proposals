@@ -686,8 +686,27 @@ std::as_const
 An Example at Scale
 \end_layout
 
-\begin_layout Standard
-Let us now consider a more complete example.
+\begin_layout Initial
+\begin_inset Argument 2
+status open
+
+\begin_layout Plain Layout
+L
+\end_layout
+
+\end_inset
+
+
+\begin_inset Argument 3
+status open
+
+\begin_layout Plain Layout
+et us now consider a more complete example
+\end_layout
+
+\end_inset
+
+.
  First, we define the 
 \family typewriter
 Show
@@ -1200,11 +1219,29 @@ The authors of this paper recognize the importance of respecting the original
 Why it is Important to Address this Now
 \end_layout
 
-\begin_layout Standard
-Should the terse syntax be accepted into the current standard, without addressin
-g this issue, then future attempts to repair this oversight in the language
- specification, leave us with one of two incredibly unpallateable alternatives
- and one unsatisfying one:
+\begin_layout Initial
+\begin_inset Argument 2
+status open
+
+\begin_layout Plain Layout
+S
+\end_layout
+
+\end_inset
+
+
+\begin_inset Argument 3
+status open
+
+\begin_layout Plain Layout
+hould the terse syntax be accepted into the current standard
+\end_layout
+
+\end_inset
+
+, without addressing this issue, then future attempts to repair this oversight
+ in the language specification, leave us with one of two incredibly unpallateabl
+e alternatives and one unsatisfying one:
 \end_layout
 
 \begin_layout Enumerate
@@ -1237,9 +1274,27 @@ In the first case, vast amounts of code will fail to compile in noisy ways.
 Some Design Philosophy
 \end_layout
 
-\begin_layout Standard
-There are other cases where current Concepts can fail to prevent an incorrect
- selection of operation.
+\begin_layout Initial
+\begin_inset Argument 2
+status open
+
+\begin_layout Plain Layout
+T
+\end_layout
+
+\end_inset
+
+
+\begin_inset Argument 3
+status open
+
+\begin_layout Plain Layout
+here are other cases where current Concepts can fail
+\end_layout
+
+\end_inset
+
+ to prevent an incorrect selection of operation.
  This fails to deliver upon a big part of the expected benefits of this
  language feature.
  The comparison has been drawn between C++ Virtual Functions and Concepts.
@@ -1360,10 +1415,29 @@ Any form of extra type generation
 Our Proposed Solution
 \end_layout
 
-\begin_layout Standard
-We propose a moderate alteration of the overload resolution rules and name
- lookup rules that statically filters out some overloads based upon whether
- those functions are used to satisfy the concept's requirements.
+\begin_layout Initial
+\begin_inset Argument 2
+status open
+
+\begin_layout Plain Layout
+W
+\end_layout
+
+\end_inset
+
+
+\begin_inset Argument 3
+status open
+
+\begin_layout Plain Layout
+e propose a moderate alteration
+\end_layout
+
+\end_inset
+
+ of the overload resolution rules and name lookup rules that statically
+ filters out some overloads based upon whether those functions are used
+ to satisfy the concept's requirements.
  This constrained overload set hides some functions from visibility in the
  definition of constrained functions.
  No change should be necessary to the rules of name lookup itself; however,
@@ -1805,9 +1879,27 @@ using
 Design Considerations
 \end_layout
 
-\begin_layout Standard
-Any design that proposes to change lookup rules should not invalidate code
- written under those rules today.
+\begin_layout Initial
+\begin_inset Argument 2
+status open
+
+\begin_layout Plain Layout
+A
+\end_layout
+
+\end_inset
+
+
+\begin_inset Argument 3
+status open
+
+\begin_layout Plain Layout
+ny design that proposes to change lookup rules
+\end_layout
+
+\end_inset
+
+ should not invalidate code written under those rules today.
  Because of this, we do not propose that the lookup rules should be changed
  when evaluating names within a "classical" template context.
  However, we see a number of opportunities to apply our modified lookup
@@ -1911,8 +2003,27 @@ We preserve the viability of overloads which are found on either branch
 Conclusion
 \end_layout
 
-\begin_layout Standard
-In P0726R0 it was asked if Concepts improve upon the expressivity of C++17.
+\begin_layout Initial
+\begin_inset Argument 2
+status open
+
+\begin_layout Plain Layout
+I
+\end_layout
+
+\end_inset
+
+
+\begin_inset Argument 3
+status open
+
+\begin_layout Plain Layout
+n P0726R0 the authors asked
+\end_layout
+
+\end_inset
+
+ if Concepts improve upon the expressivity of C++17.
  The response from EWG was mixed.
  The fact is that, although Concepts are more approachable and readable
  than C++17 
@@ -1931,8 +2042,8 @@ std::enable_if
 Revision History
 \end_layout
 
-\begin_layout Standard
-P0782R0 - A Case for Simplifying/Improving Natural Syntax Concepts (Erich
+\begin_layout Description
+P0782R0 A Case for Simplifying/Improving Natural Syntax Concepts (Erich
  Keane, A.D.A.
  Martin, Allan Deutsch) The original draft explained the general problem
  with a simple example.
@@ -1941,10 +2052,117 @@ P0782R0 - A Case for Simplifying/Improving Natural Syntax Concepts (Erich
  It was presented in the Monday Evening session of EWG at Jacksonville,
  on 2018-03-12.
  The guidance from the group was strongly positive:
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Tabular
+<lyxtabular version="3" rows="2" columns="5">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+S.F.
 \end_layout
 
-\begin_layout Standard
-SF: 10 - F: 21 - N: 22 - A: 7 - SA: 1
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+F.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+N.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+S.A.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+10
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+21
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+22
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+7
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -1963,8 +2181,8 @@ The authors would like to thank Allan Deutsch, Hal Finkel, Lisa Lippincott,
 References
 \end_layout
 
-\begin_layout Standard
-P0726R0 - "Does Concepts Improve on C++17?"
+\begin_layout Description
+P0726R0 "Does Concepts Improve on C++17?"
 \end_layout
 
 \end_body
