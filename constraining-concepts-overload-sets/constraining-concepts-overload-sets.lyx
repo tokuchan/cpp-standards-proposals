@@ -6,6 +6,9 @@
 \origin unavailable
 \textclass article
 \use_default_options true
+\begin_modules
+initials
+\end_modules
 \maintain_unincluded_children false
 \language english
 \language_package default
@@ -126,71 +129,123 @@ sean@spillane.us
 Introduction
 \end_layout
 
-\begin_layout Standard
-\begin_inset Note Note
+\begin_layout Initial
+\begin_inset Argument 2
 status open
 
 \begin_layout Plain Layout
-The language is a bit stiff and seems to make heavy use of the passive voice.
- I would recommend changing to the active voice and selecting slightly cheaper
- words.
- I've gone ahead and done so for the introduction, at least a bit.
+T
 \end_layout
 
 \end_inset
 
-The central purpose of Concepts is to make generic programming approachable
- for the average developer.
+
+\begin_inset Argument 3
+status open
+
+\begin_layout Plain Layout
+he central purpose of Concepts
+\end_layout
+
+\end_inset
+
+ is to make generic programming approachable for the average developer.
  In general it makes great strides towards this end, particularly in the
- capacity of invoking a generic function However, the Concepts design does
- not deliver on this promise in the implementation of a generic function.
+ capacity of invoking a generic function.
+\end_layout
+
+\begin_layout Standard
+Concepts can be viewed from two directions.
+ One way is to think of them as a mechanism to constrain the 
+\emph on
+derivation
+\emph default
+ of types in template instantiation.
+ While languages such as Haskell benefit from this point of view, it does
+ not work so well for C++.
+ A concept, implemented as a type derivation constraint, would necessitate
+ the use of either 
+\begin_inset Quotes eld
+\end_inset
+
+autoboxing
+\begin_inset Quotes erd
+\end_inset
+
+ of types, or transparently allowing several types to manipulate the same
+ address simultaeneously.
+ Clearly, this is not workable.
+\end_layout
+
+\begin_layout Standard
+An alternative approach is to consider a Concept as a way to limit the available
+ overload set at the time when a call to a generic function is compiled,
+ regardless of whether that function is a member of a class or not.
+ This approach has the benefit of being 
+\begin_inset Quotes eld
+\end_inset
+
+zero cost
+\begin_inset Quotes erd
+\end_inset
+
+, since we don't require fancy auto-boxing types, and we don't have to violate
+ laid-down rules of the standard.
+ Another key feature of this approach is that 
+\emph on
+at no time are Concepts ever part of types
+\emph default
+.
+ This means that we don't have to mess up name-mangling, nor do we have
+ to add any bloat.
+ On the downside, it means that Concepts are, by nature, highly ephemeral.
+\end_layout
+
+\begin_layout Standard
+Concepts are meant to be simple and unsurprising to use.
+ However, the current Concepts design does not deliver on this promise in
+ the implementation of a generic function.
  Perhaps surprisingly to the average developer, this is because the feature
  does not constrain the overload set of a template-concept function itself.
  
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-This next sentence is what I'm interpreting the previous one to say.
- Is it correct?
-\end_layout
-
-\end_inset
-
-That is, while the selection of conventional functions available to call
- is correctly constrained by the Concepts employed in the caller, 
-\emph on
-function templates
-\emph default
- are not.
- 
 \end_layout
 
 \begin_layout Standard
-Most programmers would argue that Concepts should strongly resemble the
- callable properties of an 
+We believe that Concepts should strongly resemble the callable properties
+ of an 
 \emph on
 interface
 \emph default
 .
  That is, a Concept specifies a collection of declared function types, and
- only those types can be invoked on any particular instance of the Concept.
- This mental model drives their expectations to believe that Concepts should
- offer a mechanism to limit the set of operations which would be visible
- from within their constrained function to those which are specified by
- concepts used by the constrained function.
+ 
+\emph on
+only
+\emph default
+ those types can be invoked when the Concept is invoked to contrain an instance.
+ This mental model suggests that Concepts should offer a mechanism to 
+\emph on
+limit
+\emph default
+ the set of operations which would be visible from within a constrained
+ function to those which are specified by the Concepts used by the constrained
+ function.
 \end_layout
 
 \begin_layout Standard
-The fact that this is not the case in constrained functions can lead to
- surprising violations of the author's expectations thereof.
- Unfortunately, this oversight cannot be corrected later.
- To do so would entail making silent behavioral changes to 
+The fact that this is not the case in constrained functions would be quite
+ surprising to the developer.
+ Worse, this oversight cannot be corrected once the feature is standardized
+ since this would entail making silent behavioral changes to 
 \emph on
 existing
 \emph default
  code after the release of Concepts in a standard.
- In other words, this is our only chance to get this right.
+ In other words, this is our 
+\emph on
+only chance
+\emph default
+ to get this right.
 \end_layout
 
 \begin_layout Section
