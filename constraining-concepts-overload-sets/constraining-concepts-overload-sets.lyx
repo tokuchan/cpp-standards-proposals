@@ -87,7 +87,11 @@ initials
 \begin_body
 
 \begin_layout Title
-Constraining Concepts Overload Sets ISO/IEC JTC1 SC22 WG21 P0782R1
+Constraining Concepts Overload Sets
+\begin_inset Newline newline
+\end_inset
+
+ISO/IEC JTC1 SC22 WG21 P0782R1
 \end_layout
 
 \begin_layout Author
@@ -155,7 +159,7 @@ he central purpose of Concepts
 \end_layout
 
 \begin_layout Standard
-Concepts can be viewed from two directions.
+We can view Concepts from two directions.
  One way is to think of them as a mechanism to constrain the 
 \emph on
 derivation
@@ -752,7 +756,6 @@ namespace ConceptLibrary {
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 The 
 \family typewriter
 Show
@@ -1125,7 +1128,6 @@ namespace UserProgram {
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 Example driver program.
 \end_layout
 
